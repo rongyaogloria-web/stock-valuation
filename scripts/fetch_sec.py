@@ -38,6 +38,14 @@ CONCEPTS = {
         "BusinessCombinationContingentConsiderationLiability",
         "BusinessCombinationContingentConsiderationLiabilityCurrent",
         "BusinessCombinationContingentConsiderationLiabilityNoncurrent",
+        # quality, tax, interest and red-flag checks
+        "StockholdersEquity", "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest", "Assets",
+        "Goodwill", "IntangibleAssetsNetExcludingGoodwill", "AccountsReceivableNetCurrent", "InventoryNet",
+        "UnrecordedUnconditionalPurchaseObligationBalanceSheetAmount", "PurchaseObligation",
+        "IncomeTaxExpenseBenefit", "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+        "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments",
+        "InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt", "InvestmentIncomeInterest",
+        "GrossProfit", "PaymentsForRepurchaseOfCommonStock",
     ],
     "ifrs-full": [
         "Revenue", "RevenueFromContractsWithCustomers", "ProfitLossFromOperatingActivities",
@@ -46,6 +54,9 @@ CONCEPTS = {
         "AdjustmentsForSharebasedPayments", "AdjustedWeightedAverageShares", "CashAndCashEquivalents",
         "CurrentFinancialAssetsAtFairValueThroughProfitOrLoss", "NoncurrentPortionOfNoncurrentBorrowings",
         "LongtermBorrowings", "CurrentPortionOfNoncurrentBorrowings", "ShorttermBorrowings",
+        "Equity", "EquityAttributableToOwnersOfParent", "Assets", "Goodwill", "IntangibleAssetsOtherThanGoodwill",
+        "TradeAndOtherCurrentReceivables", "CurrentTradeReceivables", "Inventories",
+        "IncomeTaxExpenseContinuingOperations", "ProfitLossBeforeTax", "FinanceCosts", "FinanceIncome", "GrossProfit",
     ],
     "dei": ["EntityCommonStockSharesOutstanding"],
 }
@@ -107,6 +118,102 @@ def get_price(ticker):
     return None
 
 
+# Foreign companies whose SEC accounts are in their home currency: home-market listing,
+# shares per US ADR, and the FX pair (Yahoo symbol) to convert back to US$.
+LOCAL_LISTING = {
+    "TSM": ("2330.TW", 5, "TWD=X"),
+    "ASML": ("ASML.AS", 1, "EUR=X"),
+    "SONY": ("6758.T", 1, "JPY=X"),
+    "TM": ("7203.T", 0.1, "JPY=X"),
+    "BABA": ("9988.HK", 8, "HKD=X"),
+    "INFY": ("INFY.NS", 1, "INR=X"),
+    "NVO": ("NOVO-B.CO", 1, "DKK=X"),
+}
+
+
+def yahoo_last(symbol):
+    j = json.loads(get_text(f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=5d&interval=1d"))
+    m = j["chart"]["result"][0]["meta"]
+    d = datetime.fromtimestamp(m.get("regularMarketTime", 0), timezone.utc).date().isoformat()
+    return float(m["regularMarketPrice"]), m.get("currency"), d
+
+
+def get_local_price(ticker):
+    if ticker not in LOCAL_LISTING:
+        return None
+    sym, ratio, fxsym = LOCAL_LISTING[ticker]
+    try:
+        p, cur, d = yahoo_last(sym)
+        out = {"symbol": sym, "price": round(p, 2), "currency": cur, "date": d, "adr_ratio": ratio,
+               "source": "Yahoo Finance (delayed)"}
+        try:
+            out["fx"] = round(yahoo_last(fxsym)[0], 4)  # home currency per US$
+        except Exception as e:
+            print(f"{ticker}: FX rate failed ({e})")
+        return out
+    except Exception as e:
+        print(f"{ticker}: home-market price failed ({e})")
+        return None
+
+
+def get_consensus(ticker):
+    """Analyst consensus revenue forecasts from Yahoo Finance (via the yfinance package).
+    Returns {'0y': {...}, '+1y': {...}, 'currency': ..., ...} or None. Never fails the run."""
+    try:
+        import yfinance as yf
+    except ImportError:
+        print(f"{ticker}: yfinance not installed - no analyst forecasts"); return None
+    out = {}
+    try:
+        tk = yf.Ticker(ticker)
+        re_ = tk.revenue_estimate
+        if re_ is not None and not re_.empty:
+            for per in ("0y", "+1y"):
+                if per in re_.index:
+                    row = re_.loc[per]
+                    vals = {}
+                    for k in ("avg", "low", "high", "numberOfAnalysts", "yearAgoRevenue", "growth"):
+                        v = row.get(k)
+                        try:
+                            v = float(v)
+                            vals[k] = None if v != v else v
+                        except (TypeError, ValueError):
+                            vals[k] = None
+                    out[per] = vals
+        try:
+            eh = tk.earnings_history
+            if eh is not None and not eh.empty:
+                rows = []
+                for idx, row in eh.iterrows():
+                    try:
+                        v = float(row.get("epsActual"))
+                        if v == v:
+                            rows.append({"quarter": str(getattr(idx, "date", lambda: idx)()), "epsActual": v})
+                    except (TypeError, ValueError):
+                        pass
+                if rows:
+                    out["epsHistory"] = rows
+        except Exception as e:
+            print(f"{ticker}: earnings history failed ({e})")
+        try:
+            info = tk.info or {}
+            if info.get("longBusinessSummary"):
+                out["summary"] = info["longBusinessSummary"][:1500]
+            for k in ("financialCurrency", "forwardPE", "trailingPE", "targetMeanPrice", "numberOfAnalystOpinions"):
+                if info.get(k) is not None:
+                    out[k] = info.get(k)
+        except Exception as e:
+            print(f"{ticker}: Yahoo info failed ({e})")
+    except Exception as e:
+        print(f"{ticker}: analyst forecasts failed ({e})")
+    if not out:
+        return None
+    out["currency"] = out.pop("financialCurrency", None)
+    out["source"] = "Yahoo Finance analyst consensus"
+    out["date"] = datetime.now(timezone.utc).date().isoformat()
+    return out
+
+
 def build_bundle(root):
     """Pack every data/sec/*.json and data/workbooks/*.json into data/sec-data.js,
     which index.html loads automatically (works on GitHub Pages and offline)."""
@@ -161,6 +268,26 @@ def recent_filings(sub, cik):
     return rows
 
 
+def sec_events(sub):
+    """8-K announcements about auditor changes (item 4.01) or restatements (4.02) in the last 3 years."""
+    r = sub.get("filings", {}).get("recent", {})
+    cutoff = f"{datetime.now(timezone.utc).year - 3}-{datetime.now(timezone.utc).strftime('%m-%d')}"
+    out = []
+    for i, form in enumerate(r.get("form", [])):
+        if not form.startswith("8-K"):
+            continue
+        items = (r.get("items", [""] * (i + 1))[i] or "")
+        date = r["filingDate"][i]
+        if date < cutoff:
+            break
+        hit = [it for it in ("4.01", "4.02") if it in items]
+        if hit:
+            acc = r["accessionNumber"][i].replace("-", "")
+            out.append({"date": date, "items": hit,
+                        "url": f"https://www.sec.gov/Archives/edgar/data/{int(sub.get('cik', 0) or 0)}/{acc}/{r['primaryDocument'][i]}"})
+    return out
+
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--bundle-only":
         return build_bundle(os.path.join(os.path.dirname(__file__), ".."))
@@ -198,7 +325,11 @@ def main():
             "fetched": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "ticker": t, "cik": cik, "entityName": cf.get("entityName", ""),
             "filings": recent_filings(sub, cik),
+            "sic": sub.get("sicDescription", ""),
+            "events": sec_events(sub),
             "price": get_price(t),
+            "consensus": get_consensus(t),
+            "local_price": get_local_price(t),
             "facts": slim_facts(cf.get("facts", {})),
         }
         with open(os.path.join(OUT, f"{t}.json"), "w") as f:
@@ -206,7 +337,8 @@ def main():
         n_q = sum(len(u) for tax in doc["facts"].values() for c in tax.values() for u in c["units"].values())
         pr = doc["price"]
         say(f"{t}: OK - {doc['entityName']}, {n_q} data points, {len(doc['filings'])} recent filings, "
-            + (f"price {pr['price']} on {pr['date']} ({pr['source']})" if pr else "price not found"))
+            + (f"price {pr['price']} on {pr['date']} ({pr['source']})" if pr else "price not found")
+            + (f", analyst forecasts: {', '.join(k for k in ('0y', '+1y') if k in (doc['consensus'] or {}))}" if doc["consensus"] else ", no analyst forecasts"))
     build_bundle(os.path.join(os.path.dirname(__file__), ".."))
     with open(os.path.join(OUT, "_last_run.log"), "w") as f:
         f.write(f"Run {datetime.now(timezone.utc).isoformat(timespec='seconds')}\n" + "\n".join(log) + "\n")

@@ -104,6 +104,11 @@ svg text{fill:var(--ink2);font-size:12px}
 .cobar:empty{display:none}
 .cobar button{padding:4px 12px;font-weight:600}
 .cobar button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.why{display:block;font-size:12px;margin-top:3px;color:var(--accent)}
+.why:empty{display:none}
+.starter{background:var(--accent-bg);border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:13px;color:var(--ink2);line-height:1.6}
+.starter:empty{display:none}
+.starter b{color:var(--ink)}
 .banner{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 16px}
 footer{max-width:1080px;margin:0 auto;padding:10px 16px 40px;color:var(--muted);font-size:12px}
 @media print{header,nav.steps,button{display:none!important}section{break-inside:avoid;border:0}}
@@ -190,7 +195,8 @@ footer{max-width:1080px;margin:0 auto;padding:10px 16px 40px;color:var(--muted);
 <section id="s5">
   <h2>5 · Estimate the value</h2>
   <p class="lead">Imagine buying today, collecting your slice of cash each year, then selling at the end of the forecast. What is all of that worth today? Do it for three futures.</p>
-  <div class="explain"><b>Owner margin</b> = profit margin after paying staff in shares (operating margin minus stock-based pay as % of sales). It is the "real" margin an owner keeps before tax. Look at <i>FCF − SBC margin</i> and <i>SBC % of sales</i> in step 3 to choose sensible numbers.</div>
+  <div class="starter" id="starter-box"></div>
+  <div class="explain"><b>Owner margin</b> = profit margin after <i>all</i> costs including staff paid in shares. The official (GAAP) <i>operating margin</i> in step 3 already counts stock pay as a cost, so it is a good guide. If you use a company's "adjusted" operating margin instead, subtract stock pay as % of sales.</div>
   <h3>Assumptions for all cases</h3>
   <div class="grid" id="f-global"></div>
   <h3>Three futures</h3>
@@ -254,7 +260,7 @@ const SCEN_F=[
  {k:'prob',l:'Probability',u:'%',h:'Your odds; the three should add to 100.',req:1},
  {k:'rev1',l:'Revenue, first forecast year',u:'$M',h:'Start from company guidance / analyst consensus, adjusted by you.',req:1},
  {k:'revN',l:'Revenue, final forecast year',u:'$M',h:'Your view of sales in the last forecast year. This drives most of the value.',req:1},
- {k:'m1',l:'Owner margin, first year',u:'%',h:'Operating margin minus SBC % of sales (see step 3).',req:1},
+ {k:'m1',l:'Owner margin, first year',u:'%',h:'Official operating margin (see step 3). Stock pay is already a cost in it.',req:1},
  {k:'mN',l:'Owner margin, final year',u:'%',h:'Where margins settle when the business is more mature.',req:1},
  {k:'exit',l:'Selling P/E at the end',u:'x',h:'Price ÷ owner earnings a buyer would pay then. Mature good business 15–25x.',req:1},
 ];
@@ -340,9 +346,9 @@ function renderAll(){
  document.getElementById('scen').innerHTML=SCN.map(([k,n,c])=>`<div class="scol"><h4><span class="dot" style="background:${c}"></span>${n}</h4>
   ${SCEN_F.map(d=>field(`scen.${k}.${d.k}`,d)).join('')}
   <label class="f"><span class="fl">Story in one line</span><div class="in"><input data-path="scen.${k}.story" data-num="0" type="text" value="${esc(getP(`scen.${k}.story`)??'')}"></div></label></div>`).join('');
- document.getElementById('moat').innerHTML=MOAT.map(([k,q,h])=>`<div class="moat"><div>${q}<small>${h}</small></div>
+ document.getElementById('moat').innerHTML=MOAT.map(([k,q,h])=>`<div class="moat"><div>${q}<small>${h}</small><small class="why" data-why="${k}"></small></div>
   <select data-path="moat.${k}" data-num="0"><option value="">– choose –</option><option value="2">Yes</option><option value="1">Partly</option><option value="0">No</option></select></div>`).join('');
- document.getElementById('manflags').innerHTML=MAN.map(([k,q,h])=>`<label class="chk"><input type="checkbox" data-path="flags.${k}" data-chk="1"><span>${q}<small>${h}</small></span></label>`).join('');
+ document.getElementById('manflags').innerHTML=MAN.map(([k,q,h])=>`<label class="chk"><input type="checkbox" data-path="flags.${k}" data-chk="1"><span>${q}<small>${h}</small><small class="why" data-why="f_${k}"></small></span></label>`).join('');
  document.getElementById('hist-help').innerHTML=HIST.map(d=>`<b>${d.l}</b>: ${d.h}`).join('<br>');
  renderHist();
  document.querySelectorAll('[data-path]').forEach(el=>{const v=getP(el.dataset.path);
@@ -355,7 +361,7 @@ function renderHist(){const t=document.getElementById('hist');
 function addRow(){S.history.push({period:''});renderHist();save();recalc()}
 function delRow(){if(S.history.length>1){S.history.pop();renderHist();save();recalc()}}
 
-document.addEventListener('input',e=>{const el=e.target;if(!el.dataset||!el.dataset.path)return;
+document.addEventListener('input',e=>{const el=e.target;if(!el.dataset||!el.dataset.path)return;if(el.dataset.path==='notes')S._autoNotes=false;
  let v=el.dataset.chk?el.checked:el.value;if(el.dataset.num==='1')v=num(v);setP(el.dataset.path,v);save();recalc();});
 document.addEventListener('change',e=>{const el=e.target;if(el.dataset&&el.dataset.chk){setP(el.dataset.path,el.checked);save();recalc();}});
 
@@ -404,7 +410,7 @@ function recalc(){
  SCN.forEach(([k])=>SCEN_F.forEach(d=>mark(`scen.${k}.${d.k}`,d)));
  const hc=histCalc();const hasHist=hc.filter(x=>x.rev!=null).length;
  const probSum=SCN.reduce((a,[k])=>a+(num(S.scen[k]?.prob)||0),0);
- document.getElementById('status').innerHTML=(S._cur&&S._cur!=='USD'?`<div class="banner"><b>Currency warning:</b> this company reports in <b>${esc(S._cur)}</b>, not US dollars. The financials are in ${esc(S._cur)} millions; the US share price (ADR) is in USD. Convert one of them before trusting the valuation. ${esc(S._priceNote||'')}</div>`:(S._priceNote?`<div class="note" style="margin-bottom:6px">${esc(S._priceNote)} Check it before deciding.</div>`:''))+(miss.length?
+ document.getElementById('status').innerHTML=(S._cur&&S._cur!=='USD'&&!S._local?`<div class="banner"><b>Currency warning:</b> this company reports in <b>${esc(S._cur)}</b>, not US dollars. The financials are in ${esc(S._cur)} millions; the US share price (ADR) is in USD. Convert one of them before trusting the valuation. ${esc(S._priceNote||'')}</div>`:(S._priceNote?`<div class="note" style="margin-bottom:6px">${esc(S._priceNote)} Check it before deciding.</div>`:''))+(miss.length?
   `<b>Data still needed (${miss.length}):</b> fill the red-outlined boxes.<ul>${miss.slice(0,12).map(m=>`<li>${m}</li>`).join('')}${miss.length>12?'<li>…and more</li>':''}</ul>${hasHist<3?'<div style="margin-top:6px">Also recommended: at least 3–5 periods of history in step 3.</div>':''}`:
   `<b>All required data entered.</b> ${probSum!==100?`<span class="bad">Probabilities add to ${probSum}%, not 100%.</span>`:''} ${hasHist<3?'Recommended: add at least 3–5 periods of history in step 3.':''}`);
 
@@ -445,6 +451,8 @@ function recalc(){
  document.getElementById('autoflags').innerHTML=fl.length?fl.map(([c,t])=>`<div class="flag"><span class="pill ${c}">${c==='good'?'OK':c==='warn'?'Watch':'Red flag'}</span><span>${t}</span></div>`).join(''):'<p class="note">Enter history in step 3 to see checks.</p>';
  document.querySelectorAll('[data-chk]').forEach(el=>el.checked=!!getP(el.dataset.path));
 
+ starterBox();
+ document.querySelectorAll('[data-why]').forEach(el=>{const w=(S._why||{})[el.dataset.why];el.textContent=w?'Auto: '+w:'';});
  // valuation
  const res={};SCN.forEach(([k])=>res[k]=model(S.scen[k]||{}));
  const ok=SCN.every(([k])=>res[k]);const g=S.global,mos=(num(g.mos)??25)/100;
@@ -763,6 +771,127 @@ function applySec(x){const rows=x._rows||secRows(x);const bal=x._bal||secBal(x);
   const rv=rows.map(r=>r.revenue).filter(v=>v!=null);S.company.ltmRevenue=x.mode==='Quarterly'?(rv.length>=4?+rv.slice(-4).reduce((a,b)=>a+b,0).toFixed(1):S.company.ltmRevenue):(rv.at(-1)??S.company.ltmRevenue);}}
 function secApply(id){const x=xGet(id);applySec(x);XS=XS.filter(y=>y.id!==id);save();renderAll();renderX();}
 
+/* ---------- AUTO ANSWERS for steps 2, 3 (adjusted profit), 4 and 6 ----------
+   Built only from SEC EDGAR data and Yahoo Finance. Fills boxes that are empty;
+   every automatic answer shows its reason. */
+function annualFlow(x,names){return secMerge(x.facts,names,true).list.filter(e=>monthsOf(e.start,e.end)===12).sort((a,b)=>a.end.localeCompare(b.end));}
+function instList(x,names){return secMerge(x.facts,names,false).list.sort((a,b)=>a.end.localeCompare(b.end));}
+function sumAt(x,groups,E){let t=0,f=0;for(const g of groups){for(const n of g){const m=secMerge(x.facts,[n],false).list.find(e=>e.end===E);if(m){t+=m.val;f++;break;}}}return f?t:null;}
+function pickNear(list,E,days=20){return list.find(e=>Math.abs(new Date(e.end)-new Date(E))<days*864e5);}
+const TAXN=['us-gaap:IncomeTaxExpenseBenefit','ifrs-full:IncomeTaxExpenseContinuingOperations'];
+const PRETAXN=['us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest','us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments','ifrs-full:ProfitLossBeforeTax'];
+const INTEXP=['us-gaap:InterestExpense','us-gaap:InterestExpenseNonoperating','us-gaap:InterestExpenseDebt','ifrs-full:FinanceCosts'];
+const INTINC=['us-gaap:InvestmentIncomeInterest','ifrs-full:FinanceIncome'];
+const EQN=['us-gaap:StockholdersEquity','us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest','ifrs-full:EquityAttributableToOwnersOfParent','ifrs-full:Equity'];
+function companyFacts(D){const x=parseSEC(D,'SEC');const A=secRows({...x,mode:'Annual',n:10}).filter(r=>num(r.revenue));
+ const tx=annualFlow(x,TAXN),pt=annualFlow(x,PRETAXN);let tax=null;
+ const pairs=pt.slice(-3).map(p=>[p,tx.find(t=>t.end===p.end)]).filter(([p,t])=>t&&p.val>0);
+ if(pairs.length){tax=clamp(pairs.reduce((a,[p,t])=>a+t.val,0)/pairs.reduce((a,[p])=>a+p.val,0),0.05,0.3);}
+ const ie=annualFlow(x,INTEXP).at(-1),ii=ie?annualFlow(x,INTINC).find(e=>e.end===ie.end):null;
+ const netInt=ie?(ie.val-(ii?ii.val:0))/1e6:null;
+ const eq=instList(x,EQN);const roic=[];
+ A.forEach(r=>{const e=pickNear(eq,r._meta.end,5);if(!e||num(r.opInc)==null)return;const d=sumAt(x,XBG.debtA,e.end)??sumAt(x,XBG.debtB,e.end)??0,c=sumAt(x,XBG.cash,e.end)??0;
+  const ic=(e.val+d-c)/1e6;if(ic>0)roic.push(r.opInc*(1-(tax??0.15))/ic);});
+ return{x,A,tax,netInt,ie,roic};}
+function autoAnswers(D,force){const F=companyFacts(D),{x,A}=F;const why=S._why=Object.assign({},force?{}:S._why||{});const C=D.consensus||{};
+ const yes=(k,v,w)=>{if(force||S.moat[k]===''||S.moat[k]==null){S.moat[k]=v;why[k]=w;}};
+ S.moat=S.moat||{};S.flags=S.flags||{};
+ // business description
+ if(force||!S.business){const sm=(C.summary||'').split(/(?<=\.)\s+/).slice(0,2).join(' ');S.business=(sm||S.company.name||'')+(D.sic?` [SEC industry: ${D.sic}]`:'');why.business='Yahoo Finance company profile + SEC industry code';}
+ yes('m1',C.summary||D.sic?'2':'1',C.summary?'company profile available – read the description above':'only SEC industry code available');
+ const dec=A.slice(1).filter((r,i)=>r.revenue<A[i].revenue*0.95).length;
+ if(A.length>=4)yes('m2',dec===0?'2':dec===1?'1':'0',`sales fell >5% in ${dec} of the last ${A.length-1} years (steadier sales suggest customers stay)`);
+ const om=A.filter(r=>num(r.opInc)!=null).map(r=>r.opInc/r.revenue);
+ if(om.length>=3){const av=om.reduce((a,b)=>a+b,0)/om.length,mn=Math.min(...om);yes('m3',av>=0.2&&mn>=0.1?'2':av>=0.1?'1':'0',`operating margin averaged ${fP(av)} (lowest ${fP(mn)}) over ${om.length} years – high, steady margins point to an edge`);}
+ if(F.roic.length){const av=F.roic.reduce((a,b)=>a+b,0)/F.roic.length;yes('m4',av>=0.15?'2':av>=0.08?'1':'0',`return on capital averaged ${fP(av)} over ${F.roic.length} years (SEC data)`);}
+ yes('m5','1','customer concentration is not in SEC summary data – defaulted to "Partly"; check the 10-K "concentration" note');
+ const sh=A.filter(r=>num(r.shares));if(sh.length>=3){const g=Math.pow(sh.at(-1).shares/sh[0].shares,1/(sh.length-1))-1;yes('m6',g<=-0.01?'2':g<=0.01?'1':'0',`diluted share count changed ${fP(g,1)} a year over ${sh.length} years (falling = buybacks, rising = dilution)`);}
+ // red flags
+ const flag=(k,v,w)=>{if(force||S.flags[k]==null){S.flags[k]=v;why['f_'+k]=w;}};
+ const ev=D.events||[];const a401=ev.filter(e=>e.items.includes('4.01')),a402=ev.filter(e=>e.items.includes('4.02'));
+ if(D.events)flag('auditor',a401.length>0,a401.length?`8-K auditor change filed ${a401.map(e=>e.date).join(', ')}`:'no auditor-change filing (8-K item 4.01) in the last 3 years');
+ if(D.events)flag('revrec',a402.length>0,a402.length?`restatement filing (8-K item 4.02) on ${a402.map(e=>e.date).join(', ')}`:'no restatement filing in 3 years; revenue-policy details not checked automatically');
+ flag('related',false,'not checked automatically – see 10-K Item 13');
+ flag('concentration',false,'not checked automatically – see 10-K concentration note');
+ flag('factoring',false,'not checked automatically – see receivables note');
+ const arL=instList(x,['us-gaap:AccountsReceivableNetCurrent','ifrs-full:TradeAndOtherCurrentReceivables','ifrs-full:CurrentTradeReceivables']),inv=instList(x,['us-gaap:InventoryNet','ifrs-full:Inventories']);
+ if(A.length>=2){const E1=A.at(-1)._meta.end,E0=A.at(-2)._meta.end,rg=A.at(-1).revenue/A.at(-2).revenue-1;const gr=l=>{const a=pickNear(l,E1,5),b=pickNear(l,E0,5);return a&&b&&b.val>0?a.val/b.val-1:null;};
+  const ga=gr(arL),gi=gr(inv);const bad=(ga!=null&&ga-rg>0.15)||(gi!=null&&gi-rg>0.15);
+  if(ga!=null||gi!=null)flag('wc',bad,`last year: sales ${fP(rg)}, receivables ${fP(ga)}, inventory ${fP(gi)}`);}
+ const asL=instList(x,['us-gaap:Assets','ifrs-full:Assets']);const la=asL.at(-1);
+ if(la){const gw=(sumAt(x,[['us-gaap:Goodwill','ifrs-full:Goodwill']],la.end)||0)+(sumAt(x,[['us-gaap:IntangibleAssetsNetExcludingGoodwill','ifrs-full:IntangibleAssetsOtherThanGoodwill']],la.end)||0);const r=gw/la.val;flag('goodwill',r>0.4,`goodwill + intangibles = ${fP(r)} of total assets (${la.end})`);}
+ const po=instList(x,['us-gaap:UnrecordedUnconditionalPurchaseObligationBalanceSheetAmount','us-gaap:PurchaseObligation']).at(-1);
+ if(po&&A.length){const r=po.val/1e6/A.at(-1).revenue;flag('commit',r>0.5,`purchase commitments ${fM(po.val/1e6)} = ${fP(r)} of a year's sales`);}else flag('commit',false,'no purchase-commitment figure tagged in SEC data – see commitments note');
+ // adjusted net income from reported adjusted EPS
+ (C.epsHistory||[]).forEach(e=>{const r=S.history.find(r=>r._meta&&Math.abs(new Date(r._meta.end)-new Date(e.quarter))<25*864e5);if(r&&num(r.adjNI)==null&&num(r.shares)){r.adjNI=Math.round(e.epsActual*r.shares*10)/10;}});
+ if((C.epsHistory||[]).length)why.adj=`adjusted net income = reported adjusted EPS (Yahoo) × diluted shares`;
+ // thesis-breakers
+ if(force||!S.breakers){const H=S.history.filter(r=>num(r.revenue)),q=S.periodType==='Quarterly',L=H.at(-1),P=q?H.at(-5):H.at(-2);const yoy=L&&P?L.revenue/P.revenue-1:null;
+  const avgM=om.length?om.reduce((a,b)=>a+b,0)/om.length:null;const sbc=L&&num(L.sbc)!=null?L.sbc/L.revenue:null;const lines=[];
+  if(yoy!=null)lines.push(`Sales growth vs a year ago falls below ${fP(clamp(yoy/2,0,0.2))} for two reports in a row (now ${fP(yoy)})`);
+  if(avgM!=null)lines.push(`Operating margin drops below its ${om.length}-year average of ${fP(avgM)}`);
+  if(sbc!=null)lines.push(`Stock-based pay rises above ${fP(sbc+0.03)} of sales (now ${fP(sbc)})`);
+  if(num(S.company.shares))lines.push(`Diluted shares exceed ${Math.round(S.company.shares*1.03).toLocaleString()}M (3% dilution from today)`);
+  lines.push('Owner cash (free cash flow minus stock pay) is negative for two reports in a row');
+  lines.push('Net debt rises above 3x a year of free cash flow');
+  if(a401.length||a402.length)lines.push('Any further auditor change or restatement');
+  S.breakers=lines.map(l=>'• '+l).join('\n');why.breakers='generated from the latest numbers';}
+ // notes & sources
+ if(force||!S.notes||S._autoNotes){const f=D.filings||[];S.notes=['Sources (filled automatically):',
+  `• SEC EDGAR company facts, CIK ${D.cik}: https://data.sec.gov/api/xbrl/companyfacts/CIK${D.cik}.json (downloaded ${String(D.fetched||'').slice(0,10)})`,
+  ...f.slice(0,3).map(x=>`• ${x.form} for period ${x.reportDate||''} (filed ${x.filingDate}): ${x.url}`),
+  D.price?`• Share price ${D.price.price} on ${D.price.date}: ${D.price.source}`:'',
+  D.local_price?`• Home-market price ${D.local_price.symbol} ${D.local_price.price} ${D.local_price.currency} on ${D.local_price.date}: ${D.local_price.source}`:'',
+  C['0y']?`• Analyst revenue forecasts (${C['0y'].numberOfAnalysts||'?'} analysts) and company profile: ${C.source}, ${C.date}`:'',
+  ...(D.events||[]).map(e=>`• 8-K item ${e.items.join(', ')} on ${e.date}: ${e.url}`),
+  'Facts come from filings; analyst forecasts and starter assumptions are estimates, not facts.'].filter(Boolean).join('\n');S._autoNotes=true;}
+ return F;}
+
+/* ---------- STARTER ASSUMPTIONS: fills every box in step 5 automatically ----------
+   Uses analyst consensus revenue forecasts (Yahoo, via the GitHub Action) when
+   available, otherwise the company's own growth; margins from the company's own
+   history (latest 12 months and 10-year average). A starting point, not advice. */
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+function nextFYE(fye){const m=+fye.slice(5,7),d=+fye.slice(8,10),now=new Date();let F=new Date(Date.UTC(now.getUTCFullYear(),m-1,d));if(F<=now)F=new Date(Date.UTC(now.getUTCFullYear()+1,m-1,d));return F;}
+function starterFor(D){const x=parseSEC(D,'SEC');const A=secRows({...x,mode:'Annual',n:10}).filter(r=>num(r.revenue));
+ const H=S.history.filter(r=>num(r.revenue)!=null);const q=S.periodType==='Quarterly';const L=q?H.slice(-4):H.slice(-1);
+ const sum=(a,k)=>a.reduce((t,r)=>t+(num(r[k])||0),0);const ltmRev=q&&L.length===4?sum(L,'revenue'):(A.at(-1)?.revenue||sum(L,'revenue'));
+ const ltmOp=q&&L.length===4&&L.every(r=>num(r.opInc)!=null)?sum(L,'opInc'):(A.at(-1)?.opInc??null);
+ const mL0=ltmOp!=null&&ltmRev?ltmOp/ltmRev:null;
+ const am=A.filter(r=>num(r.opInc)!=null).map(r=>r.opInc/r.revenue);const avg=am.length?am.reduce((a,b)=>a+b,0)/am.length:mL0;
+ const mL=clamp(mL0??avg??0.15,0.02,0.6),mA=clamp(avg??mL,0.02,0.6),mMin=am.length?clamp(Math.min(...am),0.01,0.6):mA*0.6,mMax=am.length?clamp(Math.max(...am),0.02,0.6):mL;
+ let gT=null;if(q&&H.length>=8)gT=ltmRev/sum(H.slice(-8,-4),'revenue')-1;else if(A.length>=2)gT=A.at(-1).revenue/A.at(-2).revenue-1;
+ const g5=A.length>=6?Math.pow(A.at(-1).revenue/A.at(-6).revenue,1/5)-1:null;
+ const C=D.consensus||{};const cOK=!C.currency||C.currency===x.cur;const c0=cOK?C['0y']:null,c1=cOK?C['+1y']:null;
+ const N=5,F=x.fye?nextFYE(x.fye):null,t0=F?Math.max(0.25,(F-Date.now())/3.156e10):1;
+ const useC=!!(c0&&c0.avg);
+ const r1=useC?c0.avg/1e6:ltmRev*(1+clamp(gT??0.05,-0.1,0.25));
+ const g2=useC&&c1&&c1.avg?clamp(c1.avg/c0.avg-1,-0.15,0.4):clamp(Math.min(g5??0.05,gT??0.05),-0.05,0.15);
+ const peak=mL0!=null&&avg!=null&&mL0>avg+0.15;
+ const path=(r,gs,ge)=>{let v=r;for(let i=1;i<N;i++){v*=1+gs+(ge-gs)*(i-1)/Math.max(1,N-2);}return v;};
+ const lo=useC&&c0.low?c0.low/1e6:r1*0.9,hi=useC&&c0.high?c0.high/1e6:r1*1.1;
+ const p1=v=>Math.round(v*1000)/10,R=v=>Math.round(v);
+ const c=S.company,CF=companyFacts(D),nd=CF.netInt!=null?CF.netInt:(num(c.debt)||0)*0.05-(num(c.cash)||0)*0.035;
+ const fc=H.filter(r=>num(r.ocf)!=null&&num(r.capex)!=null&&num(r.gaapNI)>0).map(r=>(r.ocf-Math.abs(r.capex))/r.gaapNI).sort((a,b)=>a-b);
+ const conv=fc.length?clamp(Math.round(fc[Math.floor(fc.length/2)]*100),80,100):95;
+ const bearM1=clamp(mL-0.25*(mL-mA)-0.02,0.01,0.6);
+ return{
+  src:useC?`analyst forecasts (${C['0y'].numberOfAnalysts||'?'} analysts, Yahoo Finance, ${C.date})`:`the company's own growth history${C.currency&&!cOK?' (analyst forecasts skipped: different currency)':''}`,
+  global:{disc:10,tax:CF.tax!=null?Math.round(CF.tax*100):15,netInt:R(nd),cashConv:conv,years:N,t0:Math.round(t0*10)/10,firstYearLabel:F?'FY'+String(F.getUTCFullYear()).slice(-2):'Year 1',valShares:num(c.shares)?Math.round(num(c.shares)*1.02*10)/10:null,mos:25},
+  scen:{
+   bear:{prob:25,rev1:R(lo),revN:R(path(lo,Math.min(0,g2/2),0)),m1:p1(bearM1),mN:p1(Math.min(mMin,mA-0.03)>0.01?Math.min(mMin,mA-0.03):0.01),exit:14,story:'Starter: sales stall, margins fall to the worst recent level.'},
+   base:{prob:50,rev1:R(r1),revN:R(path(r1,g2,0.04)),m1:p1(mL),mN:p1(peak?mA+0.25*(mL-mA):(mL+mA)/2),exit:peak?14:18,story:'Starter: forecast growth fading to 4%; margins drift halfway back to average.'},
+   bull:{prob:25,rev1:R(hi),revN:R(path(hi,g2+0.05,0.06)),m1:p1(clamp(mL+0.01,0.02,0.6)),mN:p1(clamp(Math.max(mL,mMax)+0.02,0.02,0.65)),exit:24,story:'Starter: top forecast, stronger growth, best margins hold.'}},
+  facts:{ltmM:mL0,avgM:avg,years:A.length,g2,useC,peak}};}
+function applyStarter(t,ask){const D=(window.SEC_DATA||{})[t||String(S.company.ticker||'').toUpperCase()];
+ if(!D){alert('Starter values need SEC data for this company. Add the ticker to data/watchlist.txt first.');return;}
+ if(ask&&num(S.scen?.base?.revN)&&!confirm('Replace ALL automatic answers (steps 2, 4, 5, 6) with fresh automatic values? Your own edits will be overwritten.'))return;
+ try{autoAnswers(D,true);}catch(e){console.warn(e);}const st=starterFor(D);Object.assign(S.global,st.global);S.scen=st.scen;S._starter={src:st.src,facts:st.facts,date:new Date().toISOString().slice(0,10)};
+ save();renderAll();}
+function starterBox(){const el=document.getElementById('starter-box');if(!el)return;const s=S._starter;const has=!!(window.SEC_DATA||{})[String(S.company.ticker||'').toUpperCase()];
+ el.innerHTML=s?`<b>Starter values were filled in automatically</b> from ${esc(s.src)} and the company's own margins (latest 12 months ${fP(s.facts.ltmM,1)}, ${s.facts.years}-year average ${fP(s.facts.avgM,1)}). They are a reasonable <b>starting point, not a forecast</b> – change any box you disagree with; results update instantly.${s.facts.peak?`<br><b style="color:var(--warn)">Cyclical peak warning:</b> today's margin is far above this company's long-run average – it may be at the top of a boom. Starter numbers assume margins fall back, but busts can be deeper; look hard at the Bear case.`:''} <button onclick="applyStarter(null,true)">Re-fill all automatic values</button>`
+  :(has?`<b>Fill all of step 5 automatically?</b> Uses analyst forecasts and the company's own history. <button class="primary" onclick="applyStarter(null,true)">Fill starter values</button>`:'');}
+
 /* ---------- companies packed into data/sec-data.js by the GitHub Action ---------- */
 let CUR_T=null;
 function coBar(){const el=document.getElementById('cobar');const D=window.SEC_DATA||{};const ts=Object.keys(D).sort();
@@ -778,9 +907,14 @@ function openTicker(t,keepLocal){const D=(window.SEC_DATA||{})[t];if(!D)return;
  x.mode='Quarterly';x.n=12;let rows=secRows(x);if(rows.length<4){x.mode='Annual';x.n=10;rows=secRows(x);}
  x._rows=rows;x._bal=secBal(x);applySec(x);
  S._cur=x.cur;S._priceNote='';
- if(D.price&&D.price.price){if(x.cur==='USD'){S.company.price=D.price.price;S.company.asOf=D.price.date;}
+ S._local=null;
+ if(x.cur!=='USD'&&D.local_price&&D.local_price.currency===x.cur){const lp=D.local_price;S.company.price=lp.price;S.company.asOf=lp.date;S._local=lp;
+  S._priceNote=`Valued in ${x.cur} per ordinary share using the home-market price (${lp.symbol}: ${lp.price} ${x.cur} on ${lp.date}, ${lp.source}).${lp.adr_ratio?` 1 US ADR = ${lp.adr_ratio} shares, so value per ADR in US$ ≈ value × ${lp.adr_ratio} ÷ ${lp.fx?lp.fx.toFixed(2):'FX rate'}.`:''}`;}
+ else if(D.price&&D.price.price){if(x.cur==='USD'){S.company.price=D.price.price;S.company.asOf=D.price.date;}
   S._priceNote=`Price ${D.price.price} on ${D.price.date} from ${D.price.source}.`;}
  CUR_T=t;try{history.replaceState(null,'','?t='+t)}catch(e){}
+ try{autoAnswers(D,false);}catch(e){console.warn('auto answers',e);}
+ if(!num(S.scen?.base?.revN)){const st=starterFor(D);Object.assign(S.global,st.global);S.scen=st.scen;S._starter={src:st.src,facts:st.facts};}
  save();renderAll();coBar();}
 
 async function handleFiles(files){const box=document.getElementById('xcards');
