@@ -25,6 +25,19 @@ Across the top are buttons for every company in your watch-list (e.g. **MRVL · 
 - a recent share price (delayed close, from Stooq/Yahoo – check it)
 - your saved valuation assumptions for that company, if you have saved them (see below)
 
+**Every box is filled automatically** the first time you open a company:
+
+| Step | Filled from |
+|---|---|
+| 1 Company basics | SEC filings (shares, cash, debt, revenue) + delayed share price (Yahoo) |
+| 2 Business & moat | Company profile (Yahoo) + SEC industry; moat answers scored from 10 years of SEC data (return on capital, margin stability, sales resilience, share count). Each answer shows its reason in blue. |
+| 3 History | SEC filings; adjusted net income = reported adjusted EPS (Yahoo) × diluted shares |
+| 4 Red flags | SEC 8-K filings (auditor changes, restatements), receivables/inventory vs sales, goodwill vs assets, purchase commitments. Items that cannot be checked from data say "not checked automatically". |
+| 5 Value | Starter assumptions: analyst revenue forecasts (Yahoo consensus, low/average/high → bear/base/bull) + the company's own margins; tax rate and interest cost from its filings |
+| 6 Decision | Thesis-breakers and a list of sources written from the numbers |
+
+These are **starting values, not advice**. Change any box and the result updates instantly; your changes are kept. **Re-fill all automatic values** (step 5) starts over.
+
 Direct link to one company: `https://rongyaogloria-web.github.io/stock-valuation/?t=MRVL`
 
 The data refreshes **every Monday**, and whenever you edit `data/watchlist.txt` or upload a workbook. You can also refresh now: **Actions → Fetch SEC data → Run workflow**.
