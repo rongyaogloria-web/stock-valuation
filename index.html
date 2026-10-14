@@ -102,8 +102,8 @@ svg text{fill:var(--ink2);font-size:12px}
 .xcard .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .cobar{max-width:1080px;margin:0 auto;padding:0 16px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--ink2)}
 .cobar:empty{display:none}
-.cobar button{padding:4px 12px;font-weight:600}
-.cobar button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cobar .cosel{font:inherit;font-size:13px;font-weight:600;padding:6px 32px 6px 12px;border-radius:8px;border:1px solid var(--accent);background:var(--card);color:var(--ink);cursor:pointer;min-width:240px;max-width:100%}
+.cobar .cosel:focus{outline:2px solid var(--accent);outline-offset:1px}
 .why{display:block;font-size:12px;margin-top:3px;color:var(--accent)}
 .why:empty{display:none}
 .starter{background:var(--accent-bg);border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:13px;color:var(--ink2);line-height:1.6}
@@ -896,8 +896,13 @@ function starterBox(){const el=document.getElementById('starter-box');if(!el)ret
 let CUR_T=null;
 function coBar(){const el=document.getElementById('cobar');const D=window.SEC_DATA||{};const ts=Object.keys(D).sort();
  if(!ts.length){el.innerHTML='';return;}
- el.innerHTML='<span>Auto-filled from SEC:</span>'+ts.map(t=>`<button class="${t===CUR_T?'on':''}" onclick="openTicker('${t}')" title="${esc(D[t].entityName)}">${t}</button>`).join('')+
-  `<span class="note">data updated ${esc((window.SEC_BUILT||'').slice(0,10))}</span>`;}
+ const nm=t=>{const n=String(D[t].entityName||'').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()).replace(/\b(Inc|Ltd|Co|Corp|Plc)\b\.?/g,m=>m);return n;};
+ el.innerHTML=`<label for="cosel">Auto-filled from SEC:</label>
+  <select id="cosel" class="cosel" onchange="if(this.value)openTicker(this.value)">
+   <option value="" ${CUR_T&&D[CUR_T]?'':'selected'} disabled>Choose a company…</option>
+   ${ts.map(t=>`<option value="${t}" ${t===CUR_T?'selected':''}>${t} – ${esc(nm(t))}</option>`).join('')}
+  </select>
+  <span class="note">data updated ${esc((window.SEC_BUILT||'').slice(0,10))}</span>`;}
 function openTicker(t,keepLocal){const D=(window.SEC_DATA||{})[t];if(!D)return;
  let base=null;try{base=JSON.parse(localStorage.getItem(KEY+':'+t))}catch(e){}
  if(!base&&window.WORKBOOKS&&WORKBOOKS[t])base=WORKBOOKS[t];
