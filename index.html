@@ -100,6 +100,11 @@ svg text{fill:var(--ink2);font-size:12px}
 .xcard .src{font-size:11px;color:var(--muted);white-space:normal;text-align:left;min-width:220px;max-width:320px}
 .xcard .warnings{font-size:12px;color:var(--warn);margin:8px 0}
 .xcard .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cobar{max-width:1080px;margin:0 auto;padding:0 16px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--ink2)}
+.cobar:empty{display:none}
+.cobar button{padding:4px 12px;font-weight:600}
+.cobar button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.banner{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 16px}
 footer{max-width:1080px;margin:0 auto;padding:10px 16px 40px;color:var(--muted);font-size:12px}
 @media print{header,nav.steps,button{display:none!important}section{break-inside:avoid;border:0}}
 @media (max-width:600px){.moat{grid-template-columns:1fr}.hbar .lab{min-width:86px}}
@@ -122,6 +127,7 @@ footer{max-width:1080px;margin:0 auto;padding:10px 16px 40px;color:var(--muted);
     <a href="#s1">1 · Company</a><a href="#s2">2 · Business &amp; moat</a><a href="#s3">3 · The numbers</a>
     <a href="#s4">4 · Cash &amp; red flags</a><a href="#s5">5 · Value</a><a href="#s6">6 · Decision</a>
   </nav>
+  <div class="cobar" id="cobar"></div>
 </header>
 
 <main>
@@ -219,6 +225,7 @@ footer{max-width:1080px;margin:0 auto;padding:10px 16px 40px;color:var(--muted);
 </main>
 <footer>Runs entirely in your browser; nothing is uploaded. Your work auto-saves in this browser, but use <b>Save file</b> to keep a permanent copy (e.g. in your GitHub repo's <code>data/</code> folder). Educational tool, not financial advice.</footer>
 
+<script src="data/sec-data.js"></script>
 <script>
 /* ---------- field definitions (label, unit, where to find it) ---------- */
 const COMPANY=[
@@ -316,7 +323,7 @@ function blank(){return{
 
 /* ---------- state + persistence ---------- */
 const KEY='svw-current-v1';let S;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));if(S.company&&S.company.ticker)localStorage.setItem(KEY+':'+String(S.company.ticker).toUpperCase(),JSON.stringify(S))}catch(e){}}
 function getP(p){return p.split('.').reduce((o,k)=>o==null?undefined:o[k],S)}
 function setP(p,v){const ks=p.split('.');let o=S;ks.slice(0,-1).forEach(k=>{if(o[k]==null)o[k]={};o=o[k]});o[ks.at(-1)]=v}
 function num(v){return v===''||v==null||isNaN(+v)?null:+v}
@@ -397,9 +404,9 @@ function recalc(){
  SCN.forEach(([k])=>SCEN_F.forEach(d=>mark(`scen.${k}.${d.k}`,d)));
  const hc=histCalc();const hasHist=hc.filter(x=>x.rev!=null).length;
  const probSum=SCN.reduce((a,[k])=>a+(num(S.scen[k]?.prob)||0),0);
- document.getElementById('status').innerHTML=miss.length?
+ document.getElementById('status').innerHTML=(S._cur&&S._cur!=='USD'?`<div class="banner"><b>Currency warning:</b> this company reports in <b>${esc(S._cur)}</b>, not US dollars. The financials are in ${esc(S._cur)} millions; the US share price (ADR) is in USD. Convert one of them before trusting the valuation. ${esc(S._priceNote||'')}</div>`:(S._priceNote?`<div class="note" style="margin-bottom:6px">${esc(S._priceNote)} Check it before deciding.</div>`:''))+(miss.length?
   `<b>Data still needed (${miss.length}):</b> fill the red-outlined boxes.<ul>${miss.slice(0,12).map(m=>`<li>${m}</li>`).join('')}${miss.length>12?'<li>…and more</li>':''}</ul>${hasHist<3?'<div style="margin-top:6px">Also recommended: at least 3–5 periods of history in step 3.</div>':''}`:
-  `<b>All required data entered.</b> ${probSum!==100?`<span class="bad">Probabilities add to ${probSum}%, not 100%.</span>`:''} ${hasHist<3?'Recommended: add at least 3–5 periods of history in step 3.':''}`;
+  `<b>All required data entered.</b> ${probSum!==100?`<span class="bad">Probabilities add to ${probSum}%, not 100%.</span>`:''} ${hasHist<3?'Recommended: add at least 3–5 periods of history in step 3.':''}`);
 
  // moat
  const ms=MOAT.map(([k])=>S.moat?.[k]).filter(v=>v!==''&&v!=null).map(Number);
@@ -702,7 +709,7 @@ function secLinks(){const t=(document.getElementById('secT').value||'').trim().t
  document.getElementById('secFil').href='https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+encodeURIComponent(c||t||'MRVL')+'&type=10-&owner=include&count=40';}
 function secMerge(facts,names,dur){const map={};let used=[];
  for(const n of names){const [tx,c]=n.split(':');const o=facts?.[tx]?.[c];if(!o||!o.units)continue;const uk=Object.keys(o.units);
-  const u=uk.includes('USD')?'USD':uk.includes('shares')?'shares':uk[0];let added=0;
+  const u=uk.slice().sort((a,b)=>o.units[b].length-o.units[a].length)[0];let added=0;
   for(const e of o.units[u]){if(dur!==!!e.start)continue;const key=(e.start||'')+'|'+e.end;if(map[key]&&map[key].c!==c)continue;
    if(!map[key]||e.filed>map[key].filed){map[key]={...e,c,u};added++;}}if(added)used.push(c);}
  return{list:Object.values(map),used};}
@@ -715,7 +722,8 @@ function parseSEC(j,file){const facts=j.facts;if(!facts)return null;
  const F={};XF.forEach(([k])=>F[k]=secMerge(facts,XC[k],true));
  const fyList=F.revenue.list.filter(e=>monthsOf(e.start,e.end)===12).map(e=>e.end).sort();
  const fye=fyList.at(-1)||null;
- return{id:++xid,kind:'SEC EDGAR data',sec:true,file,company:j.entityName||'',ticker:j.ticker||'',cik:j.cik,F,facts,fye,filings:j.filings||[],fetched:j.fetched||'',n:S.periodType==='Quarterly'?12:10,mode:S.periodType,updBal:true,warn:[]};}
+ const cc={};F.revenue.list.forEach(e=>cc[e.u]=(cc[e.u]||0)+1);const cur=Object.keys(cc).sort((a,b)=>cc[b]-cc[a])[0]||'USD';
+ return{id:++xid,kind:'SEC EDGAR data',sec:true,cur,file,company:j.entityName||'',ticker:j.ticker||'',cik:j.cik,F,facts,fye,filings:j.filings||[],fetched:j.fetched||'',n:S.periodType==='Quarterly'?12:10,mode:S.periodType,updBal:true,warn:[]};}
 function secLabel(x,E){if(!x.fye)return E;const fm=+x.fye.slice(5,7),fd=+x.fye.slice(8,10);const e=new Date(E);let F=new Date(Date.UTC(e.getUTCFullYear(),fm-1,fd));
  if(F<e-15*864e5)F=new Date(Date.UTC(e.getUTCFullYear()+1,fm-1,fd));const d=monthsOf(E,F.toISOString().slice(0,10));const q=4-Math.round(d/3);
  return{fy:String(F.getUTCFullYear()),fp:'Q'+Math.min(4,Math.max(1,q))};}
@@ -746,14 +754,34 @@ function renderSec(x){const rows=secRows(x);const bal=secBal(x);x._rows=rows;x._
  ${x.filings.length?`<div class="note" style="margin-top:6px">Latest filings: ${x.filings.slice(0,8).map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.form)} ${esc(f.reportDate||f.filingDate)}</a>`).join(' · ')}</div>`:''}
  <label class="note" style="display:block;margin-top:8px"><input type="checkbox" ${x.updBal?'checked':''} onchange="xSet(${x.id},'updBal',this.checked)"> Also update step 1 (name, ticker, cash, debt, other items, diluted shares, last-12-month revenue)</label>
  <div class="acts"><button class="primary" onclick="secApply(${x.id})">Replace history with these ${rows.length} periods</button><button onclick="xDrop(${x.id})">Discard</button></div></div>`;}
-function secApply(id){const x=xGet(id);const rows=x._rows;const old=Object.fromEntries(S.history.filter(r=>r.period).map(r=>[r.period,r]));
+function applySec(x){const rows=x._rows||secRows(x);const bal=x._bal||secBal(x);const old=Object.fromEntries(S.history.filter(r=>r.period).map(r=>[r.period,r]));
  rows.forEach(r=>{if(old[r.period]?.adjNI!=null)r.adjNI=old[r.period].adjNI;});
  S.history=rows.map(r=>{const o={...r};XF.forEach(([k])=>{if(o[k]!=null)o[k]=+o[k].toFixed(1)});return o;});S.periodType=x.mode;
- if(x.updBal){const b=x._bal;['cash','debt','otherLiab'].forEach(k=>{if(b[k])S.company[k]=+b[k].v.toFixed(1)});
+ if(x.updBal){['cash','debt','otherLiab'].forEach(k=>{if(bal[k])S.company[k]=+bal[k].v.toFixed(1)});
   if(x.company)S.company.name=x.company;if(x.ticker)S.company.ticker=x.ticker;
   const sh=rows.map(r=>r.shares).filter(v=>v!=null);if(sh.length)S.company.shares=+sh.at(-1).toFixed(1);
-  const rv=rows.map(r=>r.revenue).filter(v=>v!=null);S.company.ltmRevenue=x.mode==='Quarterly'?(rv.length>=4?+rv.slice(-4).reduce((a,b)=>a+b,0).toFixed(1):S.company.ltmRevenue):(rv.at(-1)??S.company.ltmRevenue);}
- XS=XS.filter(y=>y.id!==id);save();renderAll();renderX();}
+  const rv=rows.map(r=>r.revenue).filter(v=>v!=null);S.company.ltmRevenue=x.mode==='Quarterly'?(rv.length>=4?+rv.slice(-4).reduce((a,b)=>a+b,0).toFixed(1):S.company.ltmRevenue):(rv.at(-1)??S.company.ltmRevenue);}}
+function secApply(id){const x=xGet(id);applySec(x);XS=XS.filter(y=>y.id!==id);save();renderAll();renderX();}
+
+/* ---------- companies packed into data/sec-data.js by the GitHub Action ---------- */
+let CUR_T=null;
+function coBar(){const el=document.getElementById('cobar');const D=window.SEC_DATA||{};const ts=Object.keys(D).sort();
+ if(!ts.length){el.innerHTML='';return;}
+ el.innerHTML='<span>Auto-filled from SEC:</span>'+ts.map(t=>`<button class="${t===CUR_T?'on':''}" onclick="openTicker('${t}')" title="${esc(D[t].entityName)}">${t}</button>`).join('')+
+  `<span class="note">data updated ${esc((window.SEC_BUILT||'').slice(0,10))}</span>`;}
+function openTicker(t,keepLocal){const D=(window.SEC_DATA||{})[t];if(!D)return;
+ let base=null;try{base=JSON.parse(localStorage.getItem(KEY+':'+t))}catch(e){}
+ if(!base&&window.WORKBOOKS&&WORKBOOKS[t])base=WORKBOOKS[t];
+ if(!base){base=blank();base.company.ticker=t;}
+ S=Object.assign(blank(),JSON.parse(JSON.stringify(base)));S.company=Object.assign(blank().company,base.company||{});S.global=Object.assign(blank().global,base.global||{});S.scen=Object.assign(blank().scen,base.scen||{});
+ const x=parseSEC(D,'SEC');x.ticker=t;x.updBal=true;
+ x.mode='Quarterly';x.n=12;let rows=secRows(x);if(rows.length<4){x.mode='Annual';x.n=10;rows=secRows(x);}
+ x._rows=rows;x._bal=secBal(x);applySec(x);
+ S._cur=x.cur;S._priceNote='';
+ if(D.price&&D.price.price){if(x.cur==='USD'){S.company.price=D.price.price;S.company.asOf=D.price.date;}
+  S._priceNote=`Price ${D.price.price} on ${D.price.date} from ${D.price.source}.`;}
+ CUR_T=t;try{history.replaceState(null,'','?t='+t)}catch(e){}
+ save();renderAll();coBar();}
 
 async function handleFiles(files){const box=document.getElementById('xcards');
  for(const f of files){box.insertAdjacentHTML('afterbegin',`<p class="note" id="xload">Reading ${esc(f.name)}…</p>`);
@@ -770,8 +798,8 @@ async function handleFiles(files){const box=document.getElementById('xcards');
 /* ---------- load / save files ---------- */
 function load(obj){S=Object.assign(blank(),JSON.parse(JSON.stringify(obj)));S.company=Object.assign(blank().company,obj.company||{});S.global=Object.assign(blank().global,obj.global||{});
  S.scen=Object.assign(blank().scen,obj.scen||{});if(!S.history?.length)S.history=blank().history;save();renderAll();}
-function newBlank(){if(confirmLose())load(blank())}
-function loadExample(){if(confirmLose())load(EXAMPLE)}
+function newBlank(){if(confirmLose()){CUR_T=null;load(blank());coBar();}}
+function loadExample(){if(confirmLose()){load(EXAMPLE);CUR_T='MRVL';coBar();}}
 function confirmLose(){return true}
 function exportJSON(){const n=`${(S.company.ticker||'company').toUpperCase()}-${S.company.asOf||new Date().toISOString().slice(0,10)}.json`;
  const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
@@ -780,8 +808,10 @@ function importJSON(inp){const f=inp.files[0];if(!f)return;const r=new FileReade
 /* ---------- start: ?data=data/FILE.json loads a saved file from your repo ---------- */
 (async function(){const p=new URLSearchParams(location.search).get('data');
  if(p){try{const r=await fetch(p);if(r.ok){load(await r.json());return;}}catch(e){}}
+ const t=(new URLSearchParams(location.search).get('t')||'').toUpperCase();secLinks();
+ if(t&&window.SEC_DATA&&SEC_DATA[t]){openTicker(t);return;}
  let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY))}catch(e){}
- load(saved||EXAMPLE);secLinks();})();
+ load(saved||EXAMPLE);CUR_T=(S.company.ticker||'').toUpperCase();coBar();})();
 </script>
 </body>
 </html>

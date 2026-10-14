@@ -15,17 +15,31 @@ Everything runs in your browser. No account, no server, no AI needed. A Marvell 
 
 ---
 
-## 1. Open the tool (this repo is private)
+## 1. Open the tool
 
-Because the repo is **private**, only you can see it, and the tool runs from your own computer rather than from a website:
+**Live web page:** https://rongyaogloria-web.github.io/stock-valuation/
 
-1. On the repo page click **Code → Download ZIP** (or `git clone` it), and unzip.
-2. Double-click **`index.html`**. It opens in your browser and works offline.
-3. To get updates later, download again (or `git pull`).
+Across the top are buttons for every company in your watch-list (e.g. **MRVL · MU · GOOGL · TSM**). Click one and the tool fills itself in from official SEC data:
+- 8–12 quarters (or 10 years) of revenue, operating income, GAAP net income, operating cash flow, capex, stock-based pay and diluted shares
+- cash, debt, earn-outs, last-12-month revenue, company name
+- a recent share price (delayed close, from Stooq/Yahoo – check it)
+- your saved valuation assumptions for that company, if you have saved them (see below)
 
-To edit files directly on GitHub: open a file → pencil icon → **Commit changes**. To add files: **Add file → Upload files**.
+Direct link to one company: `https://rongyaogloria-web.github.io/stock-valuation/?t=MRVL`
 
-> Want a shareable web link instead? Either make the repo **Public** (Settings → General → Danger Zone → Change visibility), then turn on **Settings → Pages → Deploy from a branch → `main` / `(root)`**; or keep it private on a paid GitHub plan, which allows Pages on private repos.
+The data refreshes **every Monday**, and whenever you edit `data/watchlist.txt` or upload a workbook. You can also refresh now: **Actions → Fetch SEC data → Run workflow**.
+
+**Add or remove companies:** edit `data/watchlist.txt` on GitHub (pencil icon → one ticker per line → Commit). About a minute later the new button appears on the web page (refresh the page).
+
+**Keep your valuation assumptions:** your edits are remembered in your browser automatically. To keep them permanently (and on every device), click **Save file**, rename the download to `TICKER.json` (e.g. `MU.json`), and upload it to the **`data/workbooks/`** folder on GitHub (Add file → Upload files → Commit). Next time you click that company, your assumptions load together with the fresh SEC numbers.
+
+**Offline:** Code → Download ZIP → unzip → double-click `index.html`. The company buttons work offline too.
+
+### One-time setup (already done if the page above works)
+1. **Settings → General →** scroll to **Danger Zone → Change repository visibility → Public** (free GitHub Pages needs a public repo; anyone with the link can see your watch-list and saved workbooks).
+2. **Settings → Pages →** *Build and deployment*: **Source: Deploy from a branch**, **Branch: `main`**, folder **`/ (root)`** → **Save**. After 1–2 minutes the link above works.
+3. **Settings → Secrets and variables → Actions → Variables → New repository variable:** `SEC_USER_AGENT` = your name and email (the SEC requires it).
+4. **Settings → Actions → General → Workflow permissions → Read and write permissions → Save.**
 
 ---
 
@@ -46,7 +60,7 @@ The SEC does not allow web pages to download its data directly, so a small progr
 1. **Actions** tab → **Fetch SEC data** → **Run workflow** → type tickers, e.g. `MRVL, MU, GOOGL` → **Run**. It takes about 30 seconds.
    *Or do nothing:* every **Monday** it refreshes the tickers listed in `data/watchlist.txt` (edit that file to change the list).
 2. The files appear in `data/sec/` (e.g. `data/sec/MRVL.json`). Download them (open the file → download icon) or pull the repo.
-3. In the tool: drop `MRVL.json` on the Auto-fill box. Choose **Quarterly / Annual** and **how many periods**, check the preview, then click **Replace history with these periods**.
+3. On the web page just click the company's button at the top. (Or drop `MRVL.json` on the Auto-fill box.) Choose **Quarterly / Annual** and **how many periods**, check the preview, then click **Replace history with these periods**.
 
 What you get: revenue, operating income, GAAP net income, operating cash flow, capex, stock-based pay and diluted shares for every quarter. The tool works out Q4 and the cash-flow quarters automatically from year-to-date totals. Cash, debt, earn-outs, company name and last-12-month revenue fill into step 1, and the card links to the latest 10-Q / 10-K on sec.gov.
 
@@ -184,9 +198,10 @@ Shortcut used: stock-based pay is treated as a real cost (via the owner margin),
 index.html                        the whole tool (open it in any browser)
 README.md                         this guide
 data/TEMPLATE.json                blank workbook
-data/MRVL-2026-10-14.json         worked Marvell example
+data/workbooks/MRVL.json          your saved Marvell assumptions (loads with the MRVL button)
 data/watchlist.txt                tickers refreshed from the SEC every Monday
-data/sec/                         SEC data saved by the GitHub Action
+data/sec/                         SEC data saved by the GitHub Action (one file per ticker)
+data/sec-data.js                  everything packed for the web page (built automatically)
 scripts/fetch_sec.py              the downloader the Action runs (also runs on any PC: python scripts/fetch_sec.py MRVL)
 .github/workflows/fetch-sec.yml   the GitHub Action schedule / Run button
 ```

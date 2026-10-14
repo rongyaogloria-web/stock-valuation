@@ -1,8 +1,10 @@
 name: Fetch SEC data
 
-# Downloads official SEC EDGAR data into data/sec/TICKER.json
+# Downloads official SEC EDGAR data into data/sec/TICKER.json and packs it
+# (with saved workbooks in data/workbooks/) into data/sec-data.js for the tool
 #  - Manually: Actions tab > "Fetch SEC data" > Run workflow > type tickers
-#  - Automatically: every Monday for the tickers listed in data/watchlist.txt
+#  - Automatically: every Monday, and whenever data/watchlist.txt or
+#    data/workbooks/ change, for the tickers in data/watchlist.txt
 
 on:
   workflow_dispatch:
@@ -11,6 +13,13 @@ on:
         description: "Tickers, comma separated (leave blank to use data/watchlist.txt)"
         required: false
         default: ""
+  push:                    # runs when you change the watch-list or upload a saved workbook
+    branches: [main]
+    paths:
+      - "data/watchlist.txt"
+      - "data/workbooks/**"
+      - "scripts/fetch_sec.py"
+      - ".github/workflows/fetch-sec.yml"
   schedule:
     - cron: "17 1 * * 1"   # Mondays 01:17 UTC
 
@@ -35,6 +44,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
-          git add data/sec
+          git add data/sec data/sec-data.js
           git diff --cached --quiet || git commit -m "SEC data update $(date -u +%Y-%m-%d)"
           git push

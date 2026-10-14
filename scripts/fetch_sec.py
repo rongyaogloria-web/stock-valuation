@@ -82,6 +82,57 @@ def finally_sleep():
     time.sleep(0.25)  # stay well under the SEC limit of 10 requests/second
 
 
+def get_text(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (StockValuationWorkbook)"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def get_price(ticker):
+    """Latest closing price (delayed). Tries Stooq, then Yahoo. Returns dict or None."""
+    try:
+        csv = get_text(f"https://stooq.com/q/l/?s={ticker.lower().replace('.', '-')}.us&f=sd2t2ohlcv&h&e=csv")
+        row = csv.strip().splitlines()[-1].split(",")
+        if len(row) >= 7 and row[6] not in ("N/D", ""):
+            return {"price": round(float(row[6]), 2), "date": row[1], "source": "stooq.com (delayed close)"}
+    except Exception as e:
+        print(f"{ticker}: Stooq price failed ({e})")
+    try:
+        j = json.loads(get_text(f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?range=5d&interval=1d"))
+        m = j["chart"]["result"][0]["meta"]
+        d = datetime.fromtimestamp(m.get("regularMarketTime", 0), timezone.utc).date().isoformat()
+        return {"price": round(float(m["regularMarketPrice"]), 2), "date": d, "source": "Yahoo Finance (delayed)"}
+    except Exception as e:
+        print(f"{ticker}: Yahoo price failed ({e})")
+    return None
+
+
+def build_bundle(root):
+    """Pack every data/sec/*.json and data/workbooks/*.json into data/sec-data.js,
+    which index.html loads automatically (works on GitHub Pages and offline)."""
+    sec, wbs = {}, {}
+    sdir, wdir = os.path.join(root, "data", "sec"), os.path.join(root, "data", "workbooks")
+    for fn in sorted(os.listdir(sdir)) if os.path.isdir(sdir) else []:
+        if fn.endswith(".json"):
+            try:
+                sec[fn[:-5].upper()] = json.load(open(os.path.join(sdir, fn)))
+            except Exception as e:
+                print(f"bundle: skipped {fn} ({e})")
+    for fn in sorted(os.listdir(wdir)) if os.path.isdir(wdir) else []:
+        if fn.endswith(".json"):
+            try:
+                wbs[fn[:-5].upper()] = json.load(open(os.path.join(wdir, fn)))
+            except Exception as e:
+                print(f"bundle: skipped workbook {fn} ({e})")
+    out = os.path.join(root, "data", "sec-data.js")
+    with open(out, "w") as f:
+        f.write("/* Built automatically by scripts/fetch_sec.py - do not edit by hand. */\n")
+        f.write("window.SEC_DATA=" + json.dumps(sec, separators=(",", ":")) + ";\n")
+        f.write("window.WORKBOOKS=" + json.dumps(wbs, separators=(",", ":")) + ";\n")
+        f.write("window.SEC_BUILT=" + json.dumps(datetime.now(timezone.utc).isoformat(timespec="seconds")) + ";\n")
+    print(f"bundle: data/sec-data.js with {len(sec)} companies, {len(wbs)} saved workbooks")
+
+
 def slim_facts(facts):
     out = {}
     for tax, names in CONCEPTS.items():
@@ -111,6 +162,8 @@ def recent_filings(sub, cik):
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "--bundle-only":
+        return build_bundle(os.path.join(os.path.dirname(__file__), ".."))
     raw = (sys.argv[1] if len(sys.argv) > 1 else "") or os.environ.get("TICKERS", "")
     tickers = [t.strip().upper() for t in raw.replace(";", ",").replace(" ", ",").split(",") if t.strip()]
     if not tickers:
@@ -145,12 +198,16 @@ def main():
             "fetched": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "ticker": t, "cik": cik, "entityName": cf.get("entityName", ""),
             "filings": recent_filings(sub, cik),
+            "price": get_price(t),
             "facts": slim_facts(cf.get("facts", {})),
         }
         with open(os.path.join(OUT, f"{t}.json"), "w") as f:
             json.dump(doc, f, separators=(",", ":"))
         n_q = sum(len(u) for tax in doc["facts"].values() for c in tax.values() for u in c["units"].values())
-        say(f"{t}: OK - {doc['entityName']}, {n_q} data points, {len(doc['filings'])} recent filings")
+        pr = doc["price"]
+        say(f"{t}: OK - {doc['entityName']}, {n_q} data points, {len(doc['filings'])} recent filings, "
+            + (f"price {pr['price']} on {pr['date']} ({pr['source']})" if pr else "price not found"))
+    build_bundle(os.path.join(os.path.dirname(__file__), ".."))
     with open(os.path.join(OUT, "_last_run.log"), "w") as f:
         f.write(f"Run {datetime.now(timezone.utc).isoformat(timespec='seconds')}\n" + "\n".join(log) + "\n")
     if failed:
