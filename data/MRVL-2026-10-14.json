@@ -1,0 +1,113 @@
+{
+  "company": {
+    "ticker": "MRVL",
+    "name": "Marvell Technology",
+    "asOf": "2026-10-14",
+    "price": 270,
+    "shares": 921.2,
+    "ltmRevenue": 9450.3,
+    "cash": 3932.8,
+    "debt": 4962.9,
+    "otherLiab": 749.5
+  },
+  "business": "Fabless data-infrastructure chips: electro-optics/interconnect DSPs, custom AI accelerators (XPUs) and switching. 79% of revenue from data centre (Q2 FY27).",
+  "moat": {
+    "m1": "2",
+    "m2": "2",
+    "m3": "1",
+    "m4": "1",
+    "m5": "0",
+    "m6": "1"
+  },
+  "periodType": "Quarterly",
+  "history": [
+    {
+      "period": "Q2 FY26",
+      "revenue": 2006.1,
+      "ocf": 461.6,
+      "capex": 47.5,
+      "sbc": 153.6
+    },
+    {
+      "period": "Q3 FY26",
+      "revenue": 2074.5,
+      "ocf": 582.3,
+      "capex": 73.5,
+      "sbc": 152.1
+    },
+    {
+      "period": "Q4 FY26",
+      "revenue": 2218.7,
+      "ocf": 373.7,
+      "capex": 114.3,
+      "sbc": 143,
+      "shares": 856.2
+    },
+    {
+      "period": "Q1 FY27",
+      "revenue": 2417.8,
+      "ocf": 638.8,
+      "capex": 155.7,
+      "sbc": 207.6
+    },
+    {
+      "period": "Q2 FY27",
+      "revenue": 2739.3,
+      "gaapNI": 308,
+      "adjNI": 865.9,
+      "ocf": 605.5,
+      "capex": 126.7,
+      "sbc": 326.2,
+      "shares": 921.2
+    }
+  ],
+  "flags": {
+    "revrec": true,
+    "concentration": true,
+    "goodwill": true,
+    "factoring": true,
+    "commit": true
+  },
+  "global": {
+    "disc": 10,
+    "tax": 13,
+    "netInt": 200,
+    "cashConv": 95,
+    "years": 5,
+    "t0": 1.3,
+    "firstYearLabel": "FY28",
+    "valShares": 930,
+    "mos": 25
+  },
+  "scen": {
+    "bear": {
+      "prob": 25,
+      "rev1": 17000,
+      "revN": 22000,
+      "m1": 24,
+      "mN": 22,
+      "exit": 16,
+      "story": "AI capex digestion; custom chip ramp stalls."
+    },
+    "base": {
+      "prob": 50,
+      "rev1": 18200,
+      "revN": 52000,
+      "m1": 28,
+      "mN": 32.5,
+      "exit": 22,
+      "story": "Roughly analyst consensus to FY31."
+    },
+    "bull": {
+      "prob": 25,
+      "rev1": 20000,
+      "revN": 85000,
+      "m1": 30,
+      "mN": 36,
+      "exit": 26,
+      "story": "Management targets (~$75B FY31) are met."
+    }
+  },
+  "breakers": "Q3 FY27 revenue below $2.99B or non-GAAP gross margin below 57.5%\nData-centre growth below 30% YoY for two quarters\nSBC above 12% of revenue with no operating leverage\nDiluted shares above 950M\nFCF minus SBC turning negative",
+  "notes": "Source: project note marvell-mrvl-analysis-2026-10-14 (10-Q quarter ended 1 Aug 2026; Q2 FY27 press release). Price $270 from a quote site 13 Oct 2026. Only 8 quarters available; no 10-year history entered."
+}

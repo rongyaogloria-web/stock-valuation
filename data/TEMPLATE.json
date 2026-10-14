@@ -1,0 +1,58 @@
+{
+  "company": {
+    "ticker": "",
+    "name": "",
+    "asOf": "",
+    "price": null,
+    "shares": null,
+    "ltmRevenue": null,
+    "cash": null,
+    "debt": null,
+    "otherLiab": 0
+  },
+  "business": "",
+  "moat": {},
+  "periodType": "Annual",
+  "history": [
+    {
+      "period": ""
+    },
+    {
+      "period": ""
+    },
+    {
+      "period": ""
+    },
+    {
+      "period": ""
+    },
+    {
+      "period": ""
+    }
+  ],
+  "flags": {},
+  "global": {
+    "disc": 10,
+    "tax": 15,
+    "netInt": 0,
+    "cashConv": 95,
+    "years": 5,
+    "t0": 1,
+    "firstYearLabel": "Year 1",
+    "valShares": null,
+    "mos": 25
+  },
+  "scen": {
+    "bear": {
+      "prob": 25
+    },
+    "base": {
+      "prob": 50
+    },
+    "bull": {
+      "prob": 25
+    }
+  },
+  "breakers": "",
+  "notes": ""
+}

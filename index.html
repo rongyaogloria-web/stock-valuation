@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Valuation Workbook</title>
+<meta name="description" content="A six-step, long-term stock analysis and valuation workbook: business, moat, numbers, cash, value, margin of safety.">
+<style>
+:root{
+  --bg:#f7f6f2;--card:#ffffff;--ink:#1d1c1a;--ink2:#55534e;--muted:#8a877f;--line:#e3e1da;--line2:#cfccc2;
+  --accent:#2a6fc4;--accent-bg:#e8f0fb;--good:#13834f;--good-bg:#e4f4ec;--warn:#9a6200;--warn-bg:#fbf0d9;--bad:#b23535;--bad-bg:#fbe8e8;
+  --teal:#1baf7a;--blue:#2a78d6;--coral:#e0683d;--gray:#9a978f;--amber:#e3a008;
+  --radius:10px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#171716;--card:#21211f;--ink:#efeee9;--ink2:#c4c2b9;--muted:#8f8c84;--line:#33322f;--line2:#45443f;
+  --accent:#6aa5ee;--accent-bg:#1c2a3b;--good:#4cc48b;--good-bg:#173126;--warn:#e8b24a;--warn-bg:#3a2d12;--bad:#ef7a7a;--bad-bg:#3d1c1c;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55}
+header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.hwrap{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.hwrap h1{font-size:18px;margin:0 12px 0 0;font-weight:600}
+.hwrap .sp{flex:1}
+button,.btn{font:inherit;font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid var(--line2);background:var(--card);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+nav.steps{max-width:1080px;margin:0 auto;padding:0 16px 10px;display:flex;gap:6px;flex-wrap:wrap}
+nav.steps a{font-size:12px;text-decoration:none;color:var(--ink2);padding:4px 10px;border:1px solid var(--line);border-radius:999px}
+nav.steps a:hover{color:var(--accent);border-color:var(--accent)}
+main{max-width:1080px;margin:0 auto;padding:16px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:0 0 18px}
+section h2{font-size:19px;margin:0 0 4px;font-weight:600}
+section h3{font-size:15px;margin:18px 0 8px;font-weight:600}
+.lead{color:var(--ink2);margin:0 0 16px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.f{display:block}
+.fl{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+.req{color:var(--bad);font-weight:600;margin-left:3px}
+.in{display:flex;align-items:center;border:1px solid var(--line2);border-radius:8px;background:var(--bg);overflow:hidden}
+.in:focus-within{border-color:var(--accent)}
+.in input,.in select{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;padding:7px 9px;outline:none}
+.in .u{font-size:12px;color:var(--muted);padding:0 9px;white-space:nowrap}
+.f small{display:block;color:var(--muted);font-size:12px;margin-top:4px;line-height:1.4}
+.missing .in{border-color:var(--bad);background:var(--bad-bg)}
+textarea{width:100%;min-height:80px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;padding:8px 10px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{background:var(--bg);font-weight:600;color:var(--ink2);font-size:12px}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+th:first-child{background:var(--bg)}
+td input{width:96px;border:1px solid var(--line2);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit;padding:4px 6px;text-align:right}
+td input.txt{text-align:left;width:90px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0}
+.card{background:var(--bg);border-radius:var(--radius);padding:12px 14px}
+.card .k{font-size:12px;color:var(--ink2)}
+.card .v{font-size:24px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.card .s{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;font-weight:600}
+.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.pill.good{background:var(--good-bg)}.pill.warn{background:var(--warn-bg)}.pill.bad{background:var(--bad-bg)}
+.flag{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.flag:last-child{border-bottom:0}
+.flag .pill{flex:none;min-width:62px;text-align:center}
+.scen{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.scol{border:1px solid var(--line);border-radius:12px;padding:14px}
+.scol h4{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.scol .f{margin-bottom:10px}
+.hbar{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+.hbar .lab{min-width:130px;color:var(--ink2)}
+.hbar .track{flex:1;position:relative;height:24px}
+.hbar .b{height:24px;border-radius:0 5px 5px 0}
+.hbar .val{min-width:70px;font-weight:600;font-variant-numeric:tabular-nums}
+.pline{position:absolute;top:-4px;bottom:-4px;border-left:2px dashed var(--blue)}
+.status{background:var(--accent-bg);border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 16px}
+.status b{font-weight:600}
+.status ul{margin:6px 0 0;padding-left:18px}
+.moat{display:grid;grid-template-columns:1fr 130px;gap:8px 14px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.moat small{display:block;color:var(--muted);font-size:12px}
+.moat select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);color:var(--ink)}
+.chk{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.chk small{display:block;color:var(--muted);font-size:12px}
+.sens td{text-align:center}
+.sens td.c-good{background:var(--good-bg);color:var(--good);font-weight:600}
+.sens td.c-bad{background:var(--bad-bg);color:var(--bad)}
+.sens td.c-mid{background:var(--warn-bg);color:var(--warn)}
+.note{font-size:12px;color:var(--muted)}
+.explain{border-left:3px solid var(--accent);background:var(--accent-bg);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;color:var(--ink2);margin:12px 0}
+svg text{fill:var(--ink2);font-size:12px}
+.drop{border:1.5px dashed var(--line2);border-radius:12px;padding:14px 16px;margin:0 0 14px;background:var(--bg)}
+.drop.over{border-color:var(--accent);background:var(--accent-bg)}
+.xcard{border:1px solid var(--accent);border-radius:12px;padding:14px;margin:0 0 14px}
+.xcard h4{margin:0 0 8px;font-size:15px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.xcard .meta{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 10px;font-size:13px;color:var(--ink2);align-items:center}
+.xcard .meta input,.xcard .meta select,.xcard td select{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line2);border-radius:6px;background:var(--bg);color:var(--ink)}
+.xcard td{vertical-align:middle}
+.xcard td select{max-width:340px}
+.xcard .src{font-size:11px;color:var(--muted);white-space:normal;text-align:left;min-width:220px;max-width:320px}
+.xcard .warnings{font-size:12px;color:var(--warn);margin:8px 0}
+.xcard .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+footer{max-width:1080px;margin:0 auto;padding:10px 16px 40px;color:var(--muted);font-size:12px}
+@media print{header,nav.steps,button{display:none!important}section{break-inside:avoid;border:0}}
+@media (max-width:600px){.moat{grid-template-columns:1fr}.hbar .lab{min-width:86px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <h1>Stock Valuation Workbook</h1>
+    <span id="title-co" class="note"></span>
+    <span class="sp"></span>
+    <button onclick="newBlank()">New blank</button>
+    <button onclick="loadExample()">Load Marvell example</button>
+    <button onclick="document.getElementById('imp').click()">Open file…</button>
+    <input type="file" id="imp" accept=".json,application/json" hidden onchange="importJSON(this)">
+    <button class="primary" onclick="exportJSON()">Save file</button>
+    <button onclick="window.print()">Print / PDF</button>
+  </div>
+  <nav class="steps">
+    <a href="#s1">1 · Company</a><a href="#s2">2 · Business &amp; moat</a><a href="#s3">3 · The numbers</a>
+    <a href="#s4">4 · Cash &amp; red flags</a><a href="#s5">5 · Value</a><a href="#s6">6 · Decision</a>
+  </nav>
+</header>
+
+<main>
+<div class="status" id="status"></div>
+
+<section id="s1">
+  <h2>1 · Company basics</h2>
+  <p class="lead">Today's facts about the company. Fields marked <span class="req">*</span> are needed for the valuation. Units: money in <b>millions</b> (e.g. $2.7 billion = 2700), share price in dollars.</p>
+  <div class="grid" id="f-company"></div>
+</section>
+
+<section id="s2">
+  <h2>2 · Business &amp; moat</h2>
+  <p class="lead">Is it a good business? Answer honestly. Your answers don't change the valuation math, but they should change how much margin of safety you demand.</p>
+  <label class="f"><span class="fl">How does it make money? (one or two sentences)</span>
+  <textarea data-path="business" placeholder="e.g. Designs chips that move data inside AI data centres; sells mostly to cloud companies through distributors."></textarea>
+  <small>Source: 10-K Item 1 "Business" and the revenue note (segments / end markets).</small></label>
+  <h3>Moat checklist</h3>
+  <div id="moat"></div>
+  <div class="cards"><div class="card"><div class="k">Quality score</div><div class="v" id="moat-score">–</div><div class="s" id="moat-verdict"></div></div></div>
+</section>
+
+<section id="s3">
+  <h2>3 · The numbers (history)</h2>
+  <p class="lead">Type in 5–10 years (or recent quarters) from the filings, oldest first. Blanks are fine; ratios that need them will show "–". Money in millions.</p>
+  <div class="grid" style="margin-bottom:12px">
+    <label class="f"><span class="fl">Periods are</span><div class="in"><select data-path="periodType"><option>Annual</option><option>Quarterly</option></select></div>
+    <small>Choose Quarterly if you enter quarters; last-12-month figures then add up the latest 4 rows.</small></label>
+  </div>
+  <div class="drop" id="drop">
+    <div><b>Auto-fill from a report</b> – drop a 10-Q / 10-K / annual-report file here, or <button onclick="document.getElementById('xfile').click()">Choose files…</button></div>
+    <div class="note">Best: the SEC filing saved as <b>.htm</b> (exact, tagged numbers). Also works: <b>PDF</b> quarterly/annual reports (best-guess – you confirm each number). You can drop several reports at once; add them oldest first.</div>
+    <input type="file" id="xfile" multiple accept=".htm,.html,.xhtml,.pdf,.json" hidden onchange="handleFiles(this.files);this.value=''">
+    <details style="margin-top:10px"><summary style="cursor:pointer;font-size:14px"><b>Get years of quarterly data straight from the SEC</b> (official EDGAR data)</summary>
+     <div class="note" style="margin-top:8px;line-height:1.6">
+      <b>Automatic:</b> in your GitHub repo open <b>Actions → Fetch SEC data → Run workflow</b>, type tickers (e.g. <code>MRVL, MU, GOOGL</code>). GitHub downloads the official data into <code>data/sec/</code> (and refreshes your watch-list every Monday). Pull or download the repo, then drop <code>data/sec/TICKER.json</code> here.<br>
+      <b>Manual:</b> ticker <input id="secT" style="width:80px" placeholder="MRVL" oninput="secLinks()"> → <a id="secFind" target="_blank" rel="noopener">find its CIK number on SEC</a> · CIK <input id="secC" style="width:110px" placeholder="1835632" oninput="secLinks()"> → <a id="secData" target="_blank" rel="noopener">open SEC data</a> and save the page (Cmd/Ctrl+S) as .json, then drop it here · <a id="secFil" target="_blank" rel="noopener">list of filings</a>
+     </div></details>
+  </div>
+  <div id="xcards"></div>
+  <div class="tw"><table id="hist"></table></div>
+  <div style="margin:10px 0;display:flex;gap:8px"><button onclick="addRow()">+ Add period</button><button onclick="delRow()">− Remove last</button></div>
+  <details><summary class="note" style="cursor:pointer">Where to find each column</summary><div class="note" id="hist-help" style="margin-top:8px"></div></details>
+  <h3>What the numbers say</h3>
+  <div class="tw"><table id="hist-out"></table></div>
+  <h3>Revenue vs. real owner cash (FCF minus stock pay)</h3>
+  <div id="hist-chart"></div>
+</section>
+
+<section id="s4">
+  <h2>4 · Cash quality &amp; red flags</h2>
+  <p class="lead">Is the profit real cash? Automatic checks come from your history table; tick the manual ones after reading the filing notes.</p>
+  <div class="cards" id="cash-cards"></div>
+  <h3>Automatic checks</h3>
+  <div id="autoflags"></div>
+  <h3>Manual checks (tick if true)</h3>
+  <div id="manflags"></div>
+</section>
+
+<section id="s5">
+  <h2>5 · Estimate the value</h2>
+  <p class="lead">Imagine buying today, collecting your slice of cash each year, then selling at the end of the forecast. What is all of that worth today? Do it for three futures.</p>
+  <div class="explain"><b>Owner margin</b> = profit margin after paying staff in shares (operating margin minus stock-based pay as % of sales). It is the "real" margin an owner keeps before tax. Look at <i>FCF − SBC margin</i> and <i>SBC % of sales</i> in step 3 to choose sensible numbers.</div>
+  <h3>Assumptions for all cases</h3>
+  <div class="grid" id="f-global"></div>
+  <h3>Three futures</h3>
+  <div class="scen" id="scen"></div>
+
+  <h3>Results</h3>
+  <div class="cards" id="val-cards"></div>
+  <div id="val-bars" style="margin:10px 0 4px"></div>
+  <div class="note" id="val-legend"></div>
+
+  <h3>Reverse DCF – what is today's price assuming?</h3>
+  <div class="explain" id="rdcf"></div>
+
+  <h3>Base case, year by year</h3>
+  <div id="path-chart"></div>
+  <div class="tw"><table id="path-table"></table></div>
+
+  <h3>Sensitivity – base case value per share</h3>
+  <p class="note">Rows: final-year revenue. Columns: selling P/E. Green = today's price is below that value by at least your margin of safety; amber = value above price but buffer too thin; red = value below today's price.</p>
+  <div class="tw"><table class="sens" id="sens"></table></div>
+</section>
+
+<section id="s6">
+  <h2>6 · Decision &amp; what to watch</h2>
+  <div class="cards" id="dec-cards"></div>
+  <div class="explain" id="dec-text"></div>
+  <h3>Thesis-breakers (numbers that would prove you wrong)</h3>
+  <textarea data-path="breakers" placeholder="e.g. Revenue growth below 20% for two quarters; SBC above 12% of revenue; diluted shares above 950M"></textarea>
+  <h3>Notes &amp; sources</h3>
+  <textarea data-path="notes" placeholder="Which filing / page each number came from, and your reasoning."></textarea>
+</section>
+</main>
+<footer>Runs entirely in your browser; nothing is uploaded. Your work auto-saves in this browser, but use <b>Save file</b> to keep a permanent copy (e.g. in your GitHub repo's <code>data/</code> folder). Educational tool, not financial advice.</footer>
+
+<script>
+/* ---------- field definitions (label, unit, where to find it) ---------- */
+const COMPANY=[
+ {k:'ticker',l:'Ticker',t:'text',h:'e.g. MRVL',req:1},
+ {k:'name',l:'Company name',t:'text',h:'e.g. Marvell Technology'},
+ {k:'asOf',l:'Analysis date',t:'date',h:'The date your price and filings are from.'},
+ {k:'price',l:'Share price',u:'$',h:'Latest closing price from any quote site (not in filings).',req:1},
+ {k:'shares',l:'Diluted shares outstanding',u:'M',h:'10-Q/10-K income statement: "weighted-average shares – diluted". Add convertible/preferred shares if large.',req:1},
+ {k:'ltmRevenue',l:'Revenue, last 12 months',u:'$M',h:'Add up revenue of the last 4 quarters (10-Qs / earnings releases), or last 10-K if just released.',req:1},
+ {k:'cash',l:'Cash & short-term investments',u:'$M',h:'Balance sheet, latest 10-Q.',req:1},
+ {k:'debt',l:'Total debt',u:'$M',h:'Balance sheet: short-term + long-term debt (bonds, loans).',req:1},
+ {k:'otherLiab',l:'Other debt-like items',u:'$M',h:'Earn-outs / contingent consideration, pension deficit, big legal claims. 0 if none.'},
+];
+const GLOBAL=[
+ {k:'disc',l:'Return you demand (discount rate)',u:'%',h:'Your yearly hurdle. 8–12% is common; use higher for riskier companies.',req:1},
+ {k:'tax',l:'Tax rate',u:'%',h:'10-K income-tax note: effective tax rate (or cash taxes ÷ pre-tax profit).',req:1},
+ {k:'netInt',l:'Net interest cost per year',u:'$M',h:'Income statement: interest expense − interest income. Use a negative number if cash earns more than debt costs.'},
+ {k:'cashConv',l:'Cash conversion',u:'%',h:'How much of owner profit turns into free cash. 90–100% typical; check FCF ÷ net income in step 3.',req:1},
+ {k:'years',l:'Forecast years',u:'yrs',h:'Number of yearly forecasts before you "sell". 5 is standard.',req:1},
+ {k:'t0',l:'Years until first forecast year ends',u:'yrs',h:'e.g. 1.3 if the first forecast fiscal year ends ~16 months from today; 1 if ~12 months.',req:1},
+ {k:'firstYearLabel',l:'Name of first forecast year',t:'text',h:'e.g. FY28 or 2027. Later years count up automatically.'},
+ {k:'valShares',l:'Shares to divide by (future)',u:'M',h:'Diluted shares, rounded up for dilution you expect (acquisitions, converts).',req:1},
+ {k:'mos',l:'Margin of safety you want',u:'%',h:'How far below value you want to buy. 20–30% common; more for less certain businesses.',req:1},
+];
+const SCEN_F=[
+ {k:'prob',l:'Probability',u:'%',h:'Your odds; the three should add to 100.',req:1},
+ {k:'rev1',l:'Revenue, first forecast year',u:'$M',h:'Start from company guidance / analyst consensus, adjusted by you.',req:1},
+ {k:'revN',l:'Revenue, final forecast year',u:'$M',h:'Your view of sales in the last forecast year. This drives most of the value.',req:1},
+ {k:'m1',l:'Owner margin, first year',u:'%',h:'Operating margin minus SBC % of sales (see step 3).',req:1},
+ {k:'mN',l:'Owner margin, final year',u:'%',h:'Where margins settle when the business is more mature.',req:1},
+ {k:'exit',l:'Selling P/E at the end',u:'x',h:'Price ÷ owner earnings a buyer would pay then. Mature good business 15–25x.',req:1},
+];
+const SCN=[['bear','Bear – things go wrong','var(--coral)'],['base','Base – most likely','var(--gray)'],['bull','Bull – things go right','var(--teal)']];
+const HIST=[
+ {k:'period',l:'Period',t:'text',h:'Fiscal year or quarter, e.g. FY2025 or Q2 FY27.'},
+ {k:'revenue',l:'Revenue',h:'Income statement, top line ("net revenue" / "total revenue").'},
+ {k:'opInc',l:'Operating income',h:'Income statement, "operating income (loss)". Use GAAP.'},
+ {k:'gaapNI',l:'Net income (GAAP)',h:'Income statement, bottom line attributable to shareholders.'},
+ {k:'adjNI',l:'Adjusted net income',h:'Earnings press release, "non-GAAP net income" table. Leave blank if the company does not report one.'},
+ {k:'ocf',l:'Operating cash flow',h:'Cash-flow statement, "net cash provided by operating activities".'},
+ {k:'capex',l:'Capex',h:'Cash-flow statement, "purchases of property and equipment" (enter as a positive number).'},
+ {k:'sbc',l:'Stock-based comp',h:'Cash-flow statement, "stock-based compensation" add-back line.'},
+ {k:'shares',l:'Diluted shares (M)',h:'Income statement, "weighted-average shares – diluted".'},
+];
+const MOAT=[
+ ['m1','Can you explain how it makes money in one sentence?','If not, you cannot judge it. 10-K Item 1.'],
+ ['m2','Would customers find it costly or painful to switch away?','Long contracts, designed-in parts, data lock-in, retraining costs.'],
+ ['m3','Does it have an edge rivals cannot copy quickly (cost, brand, network, patents)?','Ask: if a rich competitor tried for 5 years, would they win?'],
+ ['m4','Have returns on capital been high (above ~15%) for years?','After-tax operating income ÷ (debt + equity − cash). Many data sites show ROIC.'],
+ ['m5','Is it NOT dependent on one customer or supplier (each under 10% of sales)?','10-K revenue note / "concentration" disclosures and risk factors.'],
+ ['m6','Does management spend money sensibly (fair acquisitions, low dilution, buybacks below value)?','Cash-flow statement financing section; share count trend; acquisition history.'],
+];
+const MAN=[
+ ['auditor','Auditor changed in the last 3 years','10-K Item 9 or an 8-K "Item 4.01".'],
+ ['revrec','Unusual or changed revenue recognition','10-K revenue note: bill-and-hold, customer warrants/incentives, big policy changes.'],
+ ['related','Material related-party dealings','10-K Item 13 and related-party note.'],
+ ['concentration','One customer or distributor is over 10% of revenue','Revenue / concentration note.'],
+ ['wc','Receivables or inventory growing much faster than revenue','Compare balance-sheet growth with revenue growth.'],
+ ['goodwill','Goodwill + intangibles over ~40% of total assets','Balance sheet. Big acquisitions can hide overpaying.'],
+ ['factoring','Receivables being sold (factoring) to boost cash flow','Cash-flow statement or receivables note.'],
+ ['commit','Large purchase commitments vs. revenue','Commitments & contingencies note.'],
+];
+
+/* ---------- example: Marvell, from analysis note dated 14 Oct 2026 ---------- */
+const EXAMPLE={
+ company:{ticker:'MRVL',name:'Marvell Technology',asOf:'2026-10-14',price:270,shares:921.2,ltmRevenue:9450.3,cash:3932.8,debt:4962.9,otherLiab:749.5},
+ business:'Fabless data-infrastructure chips: electro-optics/interconnect DSPs, custom AI accelerators (XPUs) and switching. 79% of revenue from data centre (Q2 FY27).',
+ moat:{m1:'2',m2:'2',m3:'1',m4:'1',m5:'0',m6:'1'},
+ periodType:'Quarterly',
+ history:[
+  {period:'Q2 FY26',revenue:2006.1,ocf:461.6,capex:47.5,sbc:153.6},
+  {period:'Q3 FY26',revenue:2074.5,ocf:582.3,capex:73.5,sbc:152.1},
+  {period:'Q4 FY26',revenue:2218.7,ocf:373.7,capex:114.3,sbc:143.0,shares:856.2},
+  {period:'Q1 FY27',revenue:2417.8,ocf:638.8,capex:155.7,sbc:207.6},
+  {period:'Q2 FY27',revenue:2739.3,gaapNI:308.0,adjNI:865.9,ocf:605.5,capex:126.7,sbc:326.2,shares:921.2},
+ ],
+ flags:{revrec:true,concentration:true,goodwill:true,factoring:true,commit:true},
+ global:{disc:10,tax:13,netInt:200,cashConv:95,years:5,t0:1.3,firstYearLabel:'FY28',valShares:930,mos:25},
+ scen:{
+  bear:{prob:25,rev1:17000,revN:22000,m1:24,mN:22,exit:16,story:'AI capex digestion; custom chip ramp stalls.'},
+  base:{prob:50,rev1:18200,revN:52000,m1:28,mN:32.5,exit:22,story:'Roughly analyst consensus to FY31.'},
+  bull:{prob:25,rev1:20000,revN:85000,m1:30,mN:36,exit:26,story:'Management targets (~$75B FY31) are met.'},
+ },
+ breakers:'Q3 FY27 revenue below $2.99B or non-GAAP gross margin below 57.5%\nData-centre growth below 30% YoY for two quarters\nSBC above 12% of revenue with no operating leverage\nDiluted shares above 950M\nFCF minus SBC turning negative',
+ notes:'Source: project note marvell-mrvl-analysis-2026-10-14 (10-Q quarter ended 1 Aug 2026; Q2 FY27 press release). Price $270 from a quote site 13 Oct 2026. Only 8 quarters available; no 10-year history entered.'
+};
+function blank(){return{
+ company:{ticker:'',name:'',asOf:new Date().toISOString().slice(0,10),price:null,shares:null,ltmRevenue:null,cash:null,debt:null,otherLiab:0},
+ business:'',moat:{},periodType:'Annual',
+ history:Array.from({length:5},()=>({period:''})),
+ flags:{},
+ global:{disc:10,tax:15,netInt:0,cashConv:95,years:5,t0:1,firstYearLabel:'Year 1',valShares:null,mos:25},
+ scen:{bear:{prob:25},base:{prob:50},bull:{prob:25}},
+ breakers:'',notes:''};}
+
+/* ---------- state + persistence ---------- */
+const KEY='svw-current-v1';let S;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function getP(p){return p.split('.').reduce((o,k)=>o==null?undefined:o[k],S)}
+function setP(p,v){const ks=p.split('.');let o=S;ks.slice(0,-1).forEach(k=>{if(o[k]==null)o[k]={};o=o[k]});o[ks.at(-1)]=v}
+function num(v){return v===''||v==null||isNaN(+v)?null:+v}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* ---------- rendering of inputs ---------- */
+function field(path,d){const v=getP(path);const isT=d.t==='text'||d.t==='date';
+ return `<label class="f" data-f="${path}"><span class="fl">${d.l}${d.req?'<span class="req">*</span>':''}</span>
+ <div class="in"><input data-path="${path}" data-num="${isT?0:1}" type="${d.t||'number'}" step="any" value="${esc(v??'')}">${d.u?`<span class="u">${d.u}</span>`:''}</div>
+ ${d.h?`<small>${d.h}</small>`:''}</label>`}
+function renderAll(){
+ document.getElementById('f-company').innerHTML=COMPANY.map(d=>field('company.'+d.k,d)).join('');
+ document.getElementById('f-global').innerHTML=GLOBAL.map(d=>field('global.'+d.k,d)).join('');
+ document.getElementById('scen').innerHTML=SCN.map(([k,n,c])=>`<div class="scol"><h4><span class="dot" style="background:${c}"></span>${n}</h4>
+  ${SCEN_F.map(d=>field(`scen.${k}.${d.k}`,d)).join('')}
+  <label class="f"><span class="fl">Story in one line</span><div class="in"><input data-path="scen.${k}.story" data-num="0" type="text" value="${esc(getP(`scen.${k}.story`)??'')}"></div></label></div>`).join('');
+ document.getElementById('moat').innerHTML=MOAT.map(([k,q,h])=>`<div class="moat"><div>${q}<small>${h}</small></div>
+  <select data-path="moat.${k}" data-num="0"><option value="">– choose –</option><option value="2">Yes</option><option value="1">Partly</option><option value="0">No</option></select></div>`).join('');
+ document.getElementById('manflags').innerHTML=MAN.map(([k,q,h])=>`<label class="chk"><input type="checkbox" data-path="flags.${k}" data-chk="1"><span>${q}<small>${h}</small></span></label>`).join('');
+ document.getElementById('hist-help').innerHTML=HIST.map(d=>`<b>${d.l}</b>: ${d.h}`).join('<br>');
+ renderHist();
+ document.querySelectorAll('[data-path]').forEach(el=>{const v=getP(el.dataset.path);
+  if(el.dataset.chk)el.checked=!!v;else if(el.tagName==='SELECT'||el.tagName==='TEXTAREA')el.value=v??(el.tagName==='SELECT'&&el.dataset.path==='periodType'?'Annual':'');});
+ recalc();
+}
+function renderHist(){const t=document.getElementById('hist');
+ t.innerHTML=`<tr><th>Column ($M)</th>${S.history.map((_,i)=>`<th>#${i+1}</th>`).join('')}</tr>`+
+ HIST.map(d=>`<tr><td title="${esc(d.h)}">${d.l}</td>${S.history.map((r,i)=>`<td><input class="${d.t?'txt':''}" data-path="history.${i}.${d.k}" data-num="${d.t?0:1}" type="${d.t?'text':'number'}" step="any" value="${esc(r[d.k]??'')}"></td>`).join('')}</tr>`).join('');}
+function addRow(){S.history.push({period:''});renderHist();save();recalc()}
+function delRow(){if(S.history.length>1){S.history.pop();renderHist();save();recalc()}}
+
+document.addEventListener('input',e=>{const el=e.target;if(!el.dataset||!el.dataset.path)return;
+ let v=el.dataset.chk?el.checked:el.value;if(el.dataset.num==='1')v=num(v);setP(el.dataset.path,v);save();recalc();});
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset&&el.dataset.chk){setP(el.dataset.path,el.checked);save();recalc();}});
+
+/* ---------- formatting ---------- */
+const f$=(v,d=0)=>v==null||!isFinite(v)?'–':(v<0?'-':'')+'$'+Math.abs(v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
+const fM=v=>v==null||!isFinite(v)?'–':(v<0?'-':'')+'$'+(Math.abs(v)>=1000?(Math.abs(v)/1000).toFixed(1)+'B':Math.abs(v).toFixed(0)+'M');
+const fP=(v,d=0)=>v==null||!isFinite(v)?'–':(v*100).toFixed(d)+'%';
+const fX=v=>v==null||!isFinite(v)?'–':v.toFixed(1)+'x';
+
+/* ---------- the valuation model ---------- */
+function yearLabels(n){const s=S.global.firstYearLabel||'Year 1';const m=String(s).match(/^(.*?)(\d+)$/);
+ return Array.from({length:n},(_,i)=>m?m[1]+String(+m[2]+i).padStart(m[2].length,'0'):'Y'+(i+1));}
+function model(sc,ov={}){const g=S.global,c=S.company;
+ const r1=num(ov.rev1??sc.rev1),rN=num(ov.revN??sc.revN),m1=num(sc.m1),mN=num(sc.mN),ex=num(ov.exit??sc.exit);
+ const N=Math.max(1,Math.round(num(g.years)||5)),t0=num(g.t0)??1,d=(ov.disc??num(g.disc))/100,tax=(num(g.tax)??0)/100,
+  ni=num(g.netInt)??0,cc=(num(g.cashConv)??100)/100,sh=num(g.valShares)||num(c.shares);
+ if([r1,rN,m1,mN,ex,sh].some(x=>x==null)||isNaN(d)||r1<=0||rN<=0)return null;
+ const gr=N>1?Math.pow(rN/r1,1/(N-1)):1;let v=0;const rows=[];
+ for(let i=0;i<N;i++){const rev=r1*Math.pow(gr,i),m=(N>1?m1+(mN-m1)*i/(N-1):mN)/100,
+  oe=rev*m*(1-tax)-ni,eps=oe/sh,t=t0+i,df=Math.pow(1+d,t),pvc=eps*cc/df;v+=pvc;
+  const sale=i===N-1?eps*ex:0,pvs=sale/df;v+=pvs;rows.push({rev,m,oe,eps,t,cash:eps*cc,pvc,sale,pvs});}
+ const nd=((num(c.debt)??0)+(num(c.otherLiab)??0)-(num(c.cash)??0))/sh;v-=nd;
+ return{value:v,rows,nd,growth:gr-1,N};}
+function solve(f,lo,hi,it=80){let a=f(lo),b=f(hi);if(a==null||b==null||a*b>0)return null;
+ for(let i=0;i<it;i++){const mid=(lo+hi)/2,m=f(mid);if(m==null)return null;if(a*m<=0){hi=mid;b=m}else{lo=mid;a=m}}return(lo+hi)/2;}
+function irr(sc,price){return solve(r=>{const o=model(sc,{disc:r*100});return o?o.value-price:null},-0.9,3);}
+
+/* ---------- history analysis ---------- */
+function histCalc(){return S.history.map((r,i)=>{const p=S.history[i-1]||{};const R=num(r.revenue),pr=num(p.revenue);
+ const ocf=num(r.ocf),cap=num(r.capex),sbc=num(r.sbc),fcf=ocf!=null&&cap!=null?ocf-Math.abs(cap):null;
+ return{period:r.period||('#'+(i+1)),rev:R,growth:R&&pr?R/pr-1:null,opm:R&&num(r.opInc)!=null?num(r.opInc)/R:null,
+  fcf,fcfm:R&&fcf!=null?fcf/R:null,sbcp:R&&sbc!=null?sbc/R:null,fcfs:fcf!=null&&sbc!=null?fcf-sbc:null,
+  fcfsm:R&&fcf!=null&&sbc!=null?(fcf-sbc)/R:null,conv:fcf!=null&&num(r.gaapNI)?fcf/num(r.gaapNI):null,
+  adjgap:num(r.adjNI)!=null&&num(r.gaapNI)?num(r.adjNI)/num(r.gaapNI):null,shares:num(r.shares),gaapNI:num(r.gaapNI)};});}
+function ltm(arr,key){const q=S.periodType==='Quarterly';const vals=arr.map(x=>x[key]).filter(x=>x!=null);
+ if(!vals.length)return null;if(!q)return vals.at(-1);if(vals.length<4)return null;return vals.slice(-4).reduce((a,b)=>a+b,0);}
+
+/* ---------- recalc & outputs ---------- */
+function recalc(){
+ const c=S.company,price=num(c.price);
+ document.getElementById('title-co').textContent=[c.ticker,c.name].filter(Boolean).join(' · ');
+ // missing required data
+ const miss=[];const mark=(path,d)=>{const el=document.querySelector(`[data-f="${path}"]`);const empty=getP(path)==null||getP(path)==='';
+  if(el)el.classList.toggle('missing',!!(d.req&&empty));if(d.req&&empty)miss.push(d.l+(path.startsWith('scen.')?' ('+path.split('.')[1]+')':''));};
+ COMPANY.forEach(d=>mark('company.'+d.k,d));GLOBAL.forEach(d=>{if(d.k==='valShares'&&num(c.shares)){mark('global.'+d.k,{...d,req:0});}else mark('global.'+d.k,d)});
+ SCN.forEach(([k])=>SCEN_F.forEach(d=>mark(`scen.${k}.${d.k}`,d)));
+ const hc=histCalc();const hasHist=hc.filter(x=>x.rev!=null).length;
+ const probSum=SCN.reduce((a,[k])=>a+(num(S.scen[k]?.prob)||0),0);
+ document.getElementById('status').innerHTML=miss.length?
+  `<b>Data still needed (${miss.length}):</b> fill the red-outlined boxes.<ul>${miss.slice(0,12).map(m=>`<li>${m}</li>`).join('')}${miss.length>12?'<li>…and more</li>':''}</ul>${hasHist<3?'<div style="margin-top:6px">Also recommended: at least 3–5 periods of history in step 3.</div>':''}`:
+  `<b>All required data entered.</b> ${probSum!==100?`<span class="bad">Probabilities add to ${probSum}%, not 100%.</span>`:''} ${hasHist<3?'Recommended: add at least 3–5 periods of history in step 3.':''}`;
+
+ // moat
+ const ms=MOAT.map(([k])=>S.moat?.[k]).filter(v=>v!==''&&v!=null).map(Number);
+ const sc=ms.reduce((a,b)=>a+b,0);document.getElementById('moat-score').textContent=ms.length?`${sc} / ${ms.length*2}`:'–';
+ const ratio=ms.length?sc/(ms.length*2):null;
+ document.getElementById('moat-verdict').innerHTML=ratio==null?'Answer the questions above':ratio>=.75?'<span class="good">Strong – a quality business</span>':ratio>=.5?'<span class="warn">Decent – demand a bigger buffer</span>':'<span class="bad">Weak – be very careful</span>';
+
+ // history outputs
+ const rowsOut=[['Revenue growth vs previous','growth',fP],['Operating margin','opm',fP],['Free cash flow (OCF − capex)','fcf',fM],['FCF margin','fcfm',fP],
+  ['Stock-based pay % of revenue','sbcp',fP],['FCF − SBC (owner cash)','fcfs',fM],['FCF − SBC margin','fcfsm',fP],['FCF ÷ GAAP net income','conv',fX],['Adjusted ÷ GAAP net income','adjgap',fX]];
+ document.getElementById('hist-out').innerHTML=`<tr><th>Ratio</th>${hc.map(h=>`<th>${esc(h.period)}</th>`).join('')}</tr>`+rowsOut.map(([l,k,f])=>`<tr><td>${l}</td>${hc.map(h=>`<td>${f(h[k])}</td>`).join('')}</tr>`).join('');
+ drawHist(hc);
+
+ // cash & flags
+ const lf=ltm(hc,'fcf'),ls=ltm(hc,'fcfs'),mcap=price&&num(c.shares)?price*num(c.shares):null,nd=(num(c.debt)??0)+(num(c.otherLiab)??0)-(num(c.cash)??0);
+ document.getElementById('cash-cards').innerHTML=[
+  ['Market value',fM(mcap),'price × diluted shares'],['Net debt (+ other)',fM(nd),'debt + other − cash'],
+  ['FCF, last 12 months',fM(lf),S.periodType==='Quarterly'?'sum of last 4 quarters':'latest year'],
+  ['Owner cash yield',ls!=null&&mcap?fP(ls/mcap,2):'–','(FCF − SBC) ÷ market value'],
+  ['Price ÷ sales',mcap&&num(c.ltmRevenue)?fX(mcap/num(c.ltmRevenue)):'–','market value ÷ LTM revenue'],
+  ['Net debt ÷ FCF',lf>0?fX(nd/lf):'–','years of cash to repay; <3x comfortable']
+ ].map(([k,v,s])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+ const fl=[];const last=[...hc].reverse().find(h=>h.rev!=null);
+ const lastSbc=[...hc].reverse().find(h=>h.sbcp!=null);
+ if(lastSbc)fl.push(lastSbc.sbcp>.10?['bad',`Stock-based pay is ${fP(lastSbc.sbcp,1)} of revenue (${lastSbc.period}). Above 10% means "adjusted" profits overstate what owners get.`]:lastSbc.sbcp>.05?['warn',`Stock-based pay is ${fP(lastSbc.sbcp,1)} of revenue. Moderate – always subtract it.`]:['good',`Stock-based pay is low (${fP(lastSbc.sbcp,1)} of revenue).`]);
+ const lastAdj=[...hc].reverse().find(h=>h.adjgap!=null);
+ if(lastAdj)fl.push(lastAdj.adjgap>1.5?['bad',`Adjusted profit is ${fX(lastAdj.adjgap)} official (GAAP) profit in ${lastAdj.period}. Find out exactly what is being left out.`]:lastAdj.adjgap>1.15?['warn',`Adjusted profit is ${fX(lastAdj.adjgap)} GAAP profit. Check the adjustments.`]:['good','Adjusted and GAAP profit are close.']);
+ const sh=hc.filter(h=>h.shares!=null);
+ if(sh.length>=2){const ch=sh.at(-1).shares/sh[0].shares-1;fl.push(ch>.05?['bad',`Diluted shares grew ${fP(ch,1)} from ${sh[0].period} to ${sh.at(-1).period}. Your slice of the company is shrinking.`]:ch>.01?['warn',`Diluted shares grew ${fP(ch,1)} over the period.`]:['good',`Share count stable or falling (${fP(ch,1)}).`]);}
+ const cv=hc.filter(h=>h.fcf!=null&&h.gaapNI!=null);
+ if(cv.length){const tf=cv.reduce((a,h)=>a+h.fcf,0),tn=cv.reduce((a,h)=>a+h.gaapNI,0);if(tn>0)fl.push(tf/tn<.8?['bad',`Free cash flow is only ${fX(tf/tn)} net income – profit is not turning into cash.`]:['good',`Free cash flow is ${fX(tf/tn)} net income – profit converts to cash.`]);}
+ const neg=hc.filter(h=>h.fcfs!=null);if(neg.length&&neg.at(-1).fcfs<0)fl.push(['bad','Owner cash (FCF − SBC) is negative in the latest period.']);
+ if(last&&last.growth!=null&&last.growth<0)fl.push(['warn',`Revenue fell ${fP(-last.growth,1)} in ${last.period}.`]);
+ if(lf>0&&nd/lf>3)fl.push(['bad',`Net debt is ${fX(nd/lf)} a year's free cash flow – heavy.`]);else if(lf>0)fl.push(['good',`Debt is manageable (net debt ${fX(Math.max(nd,0)/lf)} FCF).`]);
+ const mf=MAN.filter(([k])=>S.flags?.[k]);if(mf.length)fl.push(['warn',`${mf.length} manual red flag(s) ticked below: ${mf.map(m=>m[1].toLowerCase()).join('; ')}.`]);
+ document.getElementById('autoflags').innerHTML=fl.length?fl.map(([c,t])=>`<div class="flag"><span class="pill ${c}">${c==='good'?'OK':c==='warn'?'Watch':'Red flag'}</span><span>${t}</span></div>`).join(''):'<p class="note">Enter history in step 3 to see checks.</p>';
+ document.querySelectorAll('[data-chk]').forEach(el=>el.checked=!!getP(el.dataset.path));
+
+ // valuation
+ const res={};SCN.forEach(([k])=>res[k]=model(S.scen[k]||{}));
+ const ok=SCN.every(([k])=>res[k]);const g=S.global,mos=(num(g.mos)??25)/100;
+ let wv=null;if(ok&&probSum>0)wv=SCN.reduce((a,[k])=>a+res[k].value*(num(S.scen[k].prob)||0),0)/probSum;
+ const base=res.base;
+ document.getElementById('val-cards').innerHTML=SCN.map(([k,n,col])=>{const r=res[k];const ir=r&&price?irr(S.scen[k],price):null;
+  return`<div class="card"><div class="k"><span class="dot" style="background:${col}"></span> ${n.split(' –')[0]} (${num(S.scen[k]?.prob)??'–'}%)</div><div class="v">${r?f$(r.value):'–'}</div><div class="s">${r&&price?`${fP(r.value/price-1)} vs price · return ${ir==null?'–':fP(ir,1)}/yr`:'fill inputs'}</div></div>`}).join('')+
+  `<div class="card"><div class="k">Probability-weighted</div><div class="v">${f$(wv)}</div><div class="s">${wv&&price?fP(wv/price-1)+' vs price':''}</div></div>`;
+ drawBars(res,wv,price,mos);
+ // reverse DCF
+ const rd=document.getElementById('rdcf');
+ if(base&&price){const iv=solve(x=>{const o=model(S.scen.base,{revN:x});return o?o.value-price:null},1,num(S.scen.base.rev1)*200);
+  const yrs=(num(g.t0)??1)+base.N-1;const L=num(c.ltmRevenue);const lab=yearLabels(base.N).at(-1);
+  rd.innerHTML=iv==null?'Could not solve – check inputs.':`To be worth exactly today's ${f$(price)} with your base-case margins and a ${num(S.scen.base.exit)}x selling P/E, revenue must reach about <b>${fM(iv)}</b> in ${lab}. `+
+   (L?`That is about <b>${fP(Math.pow(iv/L,1/yrs)-1)} a year</b> growth from today's ${fM(L)} for ${yrs.toFixed(1)} years. `:'')+
+   `Your base case assumes ${fM(num(S.scen.base.revN))}. ${iv>num(S.scen.base.revN)?'<span class="bad">The market expects more than your base case.</span>':'<span class="good">The market expects less than your base case.</span>'} Ask yourself: is that growth realistic?`;
+ }else rd.textContent='Fill in the base case and share price.';
+ // path
+ drawPath(base);
+ // sensitivity
+ const st=document.getElementById('sens');
+ if(base&&price){const ex=num(S.scen.base.exit),rv=num(S.scen.base.revN);const exs=[-8,-4,0,4,8].map(d=>Math.max(4,ex+d)),rvs=[.6,.8,1,1.2,1.4].map(f=>rv*f);
+  st.innerHTML=`<tr><th>Final revenue ↓ / P/E →</th>${exs.map(x=>`<th style="text-align:center">${x}x</th>`).join('')}</tr>`+rvs.map(r=>`<tr><td>${fM(r)}</td>${exs.map(x=>{const v=model(S.scen.base,{revN:r,exit:x}).value;
+   const cls=price<=v*(1-mos)?'c-good':v<price?'c-bad':'c-mid';return`<td class="${cls}">${f$(v)}</td>`}).join('')}</tr>`).join('');}
+ else st.innerHTML='<tr><td>Fill in the base case and price.</td></tr>';
+ // decision
+ const buy=base?base.value*(1-mos):null,buyW=wv?wv*(1-mos):null;
+ document.getElementById('dec-cards').innerHTML=[
+  ['Price today',f$(price),''],
+  ['Margin of safety now',wv&&price?fP((wv-price)/wv):'–','vs weighted value; want ≥ '+fP(mos)],
+  ['Buy below',buy?f$(Math.min(buy,buyW??buy)):'–',`lower of base and weighted value less ${fP(mos)}`],
+  ['Expensive above',base?f$(Math.max(base.value,wv??0)):'–','above base/weighted value: consider trimming']
+ ].map(([k,v,s])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+ const dt=document.getElementById('dec-text');
+ if(wv&&price){const m=(wv-price)/wv;dt.innerHTML=m>=mos?`<b class="good">Price is ${fP(m)} below weighted value – margin of safety met.</b> Re-check the bear case: could you live with ${f$(res.bear.value)}?`:
+  m>=0?`<b class="warn">Fairly priced – only ${fP(m)} below weighted value.</b> Not enough buffer for new money; holders can keep.`:
+  `<b class="bad">Price is ${fP(-m)} above weighted value – no margin of safety.</b> Don't add; if you hold, consider trimming above ${f$(Math.max(base.value,wv))}.`;}
+ else dt.textContent='Complete step 5 to get a decision.';
+}
+
+/* ---------- charts (plain SVG, no libraries) ---------- */
+function drawHist(hc){const el=document.getElementById('hist-chart');const d=hc.filter(h=>h.rev!=null);
+ if(!d.length){el.innerHTML='<p class="note">Enter revenue to see the chart.</p>';return;}
+ const W=680,H=240,top=20,bot=40,left=10,mx=Math.max(...d.map(h=>Math.max(h.rev,h.fcfs??0))),mn=Math.min(0,...d.map(h=>h.fcfs??0));
+ const sy=v=>top+(mx-v)/(mx-mn)*(H-top-bot),zero=sy(0),slot=(W-left*2)/d.length,bw=Math.min(28,slot/3);
+ let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Revenue and owner cash by period"><line x1="0" x2="${W}" y1="${zero}" y2="${zero}" stroke="var(--line2)"/>`;
+ d.forEach((h,i)=>{const cx=left+slot*i+slot/2;const y1=sy(h.rev);s+=`<rect x="${cx-bw-2}" y="${y1}" width="${bw}" height="${zero-y1}" rx="3" fill="var(--blue)"/>`;
+  if(h.fcfs!=null){const y2=sy(h.fcfs);s+=`<rect x="${cx+2}" y="${Math.min(y2,zero)}" width="${bw}" height="${Math.abs(zero-y2)}" rx="3" fill="${h.fcfs<0?'var(--coral)':'var(--teal)'}"/>`;}
+  s+=`<text x="${cx}" y="${H-18}" text-anchor="middle">${esc(h.period)}</text>`;});
+ s+=`</svg><div class="note"><span class="dot" style="background:var(--blue)"></span> Revenue &nbsp; <span class="dot" style="background:var(--teal)"></span> FCF − SBC (owner cash)</div>`;el.innerHTML=s;}
+function drawBars(res,wv,price,mos){const el=document.getElementById('val-bars');const items=[['Bear',res.bear,'var(--coral)'],['Base',res.base,'var(--gray)'],['Weighted',wv!=null?{value:wv}:null,'var(--amber)'],['Bull',res.bull,'var(--teal)']];
+ const vals=items.filter(i=>i[1]).map(i=>i[1].value);if(!vals.length){el.innerHTML='';document.getElementById('val-legend').textContent='';return;}
+ const mx=Math.max(...vals,price||0)*1.05;const pct=v=>Math.max(0,v)/mx*100;
+ el.innerHTML=items.map(([n,r,c],i)=>`<div class="hbar"><span class="lab">${n}</span><div class="track">${r?`<div class="b" style="width:${pct(r.value)}%;background:${c}"></div>`:''}${price&&i===0?'':''}${price?`<div class="pline" style="left:${pct(price)}%"></div>`:''}</div><span class="val">${r?f$(r.value):'–'}</span></div>`).join('');
+ document.getElementById('val-legend').innerHTML=price?`Dashed line = today's price ${f$(price)}. Bars to the right of it mean the stock looks cheap in that future.`:'';}
+function drawPath(base){const el=document.getElementById('path-chart'),tb=document.getElementById('path-table');
+ if(!base){el.innerHTML='<p class="note">Fill in the base case.</p>';tb.innerHTML='';return;}
+ const L=yearLabels(base.N),r=base.rows,sale=r.at(-1).sale,W=680,H=230,top=26,bot=40,mx=Math.max(sale,...r.map(x=>x.cash))||1;
+ const slot=(W-20)/(base.N+1),bw=Math.min(56,slot*.6),sy=v=>top+(1-Math.max(v,0)/mx)*(H-top-bot),base0=H-bot;
+ let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Base case yearly owner cash per share and final sale value"><line x1="0" x2="${W}" y1="${base0}" y2="${base0}" stroke="var(--line2)"/>`;
+ r.forEach((x,i)=>{const cx=10+slot*i+slot/2,y=sy(x.cash);s+=`<rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${base0-y}" rx="3" fill="var(--teal)"/><text x="${cx}" y="${y-6}" text-anchor="middle">${f$(x.cash,2)}</text><text x="${cx}" y="${H-20}" text-anchor="middle">${L[i]}</text>`;});
+ const cx=10+slot*base.N+slot/2,y=sy(sale);s+=`<rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${base0-y}" rx="3" fill="var(--coral)"/><text x="${cx}" y="${y-6}" text-anchor="middle">${f$(sale)}</text><text x="${cx}" y="${H-20}" text-anchor="middle">Sell</text></svg>`;
+ el.innerHTML=s+`<div class="note"><span class="dot" style="background:var(--teal)"></span> Cash you collect per share each year &nbsp; <span class="dot" style="background:var(--coral)"></span> Sale at ${num(S.scen.base.exit)}x final-year earnings. All of it shrunk back to today, minus net debt per share (${f$(base.nd,2)}), = <b>${f$(base.value)}</b>.</div>`;
+ tb.innerHTML=`<tr><th>Year</th><th>Revenue</th><th>Owner margin</th><th>Owner earnings</th><th>Per share</th><th>Cash / share</th><th>Years away</th><th>Worth today</th></tr>`+
+  r.map((x,i)=>`<tr><td>${L[i]}</td><td>${fM(x.rev)}</td><td>${fP(x.m,1)}</td><td>${fM(x.oe)}</td><td>${f$(x.eps,2)}</td><td>${f$(x.cash,2)}</td><td>${x.t.toFixed(1)}</td><td>${f$(x.pvc,2)}</td></tr>`).join('')+
+  `<tr><td>Sale</td><td colspan="4" style="text-align:left">${num(S.scen.base.exit)}x × ${f$(r.at(-1).eps,2)}</td><td>${f$(sale)}</td><td>${r.at(-1).t.toFixed(1)}</td><td>${f$(r.at(-1).pvs)}</td></tr>`+
+  `<tr><td>Less net debt</td><td colspan="6"></td><td>-${f$(base.nd,2)}</td></tr><tr><td><b>Value / share</b></td><td colspan="6"></td><td><b>${f$(base.value)}</b></td></tr>`;}
+
+/* =====================================================================
+   AUTO-FILL FROM REPORTS
+   - SEC inline-XBRL (.htm/.xhtml): reads the tagged numbers exactly.
+   - PDF: reads the text, finds likely lines, you confirm each one.
+   Quarterly numbers: if a report only gives a year-to-date total
+   (e.g. 6-month cash flow, or a full-year 10-K), the quarter is worked
+   out by subtracting the earlier quarters of the same fiscal year that
+   are already in your table. Add reports oldest first.
+   ===================================================================== */
+const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+const XF=[['revenue','Revenue','is'],['opInc','Operating income','is'],['gaapNI','Net income (GAAP)','is'],['ocf','Operating cash flow','cf'],['capex','Capex','cf'],['sbc','Stock-based comp','cf'],['shares','Diluted shares (M)','is']];
+const XBAL=[['cash','Cash & short-term investments'],['debt','Total debt'],['otherLiab','Other debt-like (earn-outs)']];
+const XC={
+ revenue:['us-gaap:Revenues','us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax','us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax','us-gaap:SalesRevenueNet','ifrs-full:Revenue','ifrs-full:RevenueFromContractsWithCustomers'],
+ opInc:['us-gaap:OperatingIncomeLoss','ifrs-full:ProfitLossFromOperatingActivities'],
+ gaapNI:['us-gaap:NetIncomeLoss','us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic','us-gaap:ProfitLoss','ifrs-full:ProfitLossAttributableToOwnersOfParent','ifrs-full:ProfitLoss'],
+ ocf:['us-gaap:NetCashProvidedByUsedInOperatingActivities','us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations','ifrs-full:CashFlowsFromUsedInOperatingActivities'],
+ capex:['us-gaap:PaymentsToAcquirePropertyPlantAndEquipment','us-gaap:PaymentsToAcquireProductiveAssets','us-gaap:PaymentsForCapitalImprovements','ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities','ifrs-full:PurchaseOfPropertyPlantAndEquipment'],
+ sbc:['us-gaap:ShareBasedCompensation','us-gaap:AllocatedShareBasedCompensationExpense','ifrs-full:AdjustmentsForSharebasedPayments'],
+ shares:['us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding','ifrs-full:AdjustedWeightedAverageShares'],
+};
+const XBG={ // balance items: sum of the first concept found in each group
+ cash:[['us-gaap:CashAndCashEquivalentsAtCarryingValue','us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents','ifrs-full:CashAndCashEquivalents'],['us-gaap:ShortTermInvestments','us-gaap:MarketableSecuritiesCurrent','us-gaap:AvailableForSaleSecuritiesDebtSecuritiesCurrent','ifrs-full:CurrentFinancialAssetsAtFairValueThroughProfitOrLoss']],
+ debtA:[['us-gaap:LongTermDebt','us-gaap:DebtInstrumentCarryingAmount'],['us-gaap:ShortTermBorrowings'],['us-gaap:CommercialPaper']],
+ debtB:[['us-gaap:LongTermDebtNoncurrent','us-gaap:LongTermDebtAndCapitalLeaseObligations','us-gaap:SeniorNotes','us-gaap:ConvertibleNotesPayable','ifrs-full:NoncurrentPortionOfNoncurrentBorrowings','ifrs-full:LongtermBorrowings'],['us-gaap:LongTermDebtCurrent','us-gaap:DebtCurrent','ifrs-full:CurrentPortionOfNoncurrentBorrowings'],['us-gaap:ShortTermBorrowings','ifrs-full:ShorttermBorrowings'],['us-gaap:CommercialPaper']],
+ otherLiab:[['us-gaap:BusinessCombinationContingentConsiderationLiability'],['us-gaap:BusinessCombinationContingentConsiderationLiabilityCurrent'],['us-gaap:BusinessCombinationContingentConsiderationLiabilityNoncurrent']],
+};
+let XS=[];let xid=0;
+const monthsOf=(s,e)=>Math.round((new Date(e)-new Date(s))/864e5/30.44);
+const fpToQ=fp=>({Q1:1,Q2:2,Q3:3,Q4:4,FY:4})[fp]||null;
+const yy=fy=>fy?String(fy).slice(-2):'';
+function xLabel(fp,fy,mode){if(!fp&&!fy)return '';if(mode==='Annual')return 'FY'+yy(fy);return (fp==='FY'?'Q4':fp)+' FY'+yy(fy);}
+
+/* ---- inline XBRL ---- */
+function parseIXBRL(text,file){
+ const doc=new DOMParser().parseFromString(text,'text/html');const all=doc.getElementsByTagName('*');
+ const ctx={},facts={},nn={};
+ const loc=el=>el.tagName.toLowerCase().split(':').pop();
+ for(const el of all){const n=loc(el);
+  if(n==='context'&&el.tagName.includes(':')||n==='context'){const id=el.getAttribute('id');if(!id)continue;const c={seg:false};
+   for(const d of el.getElementsByTagName('*')){const m=loc(d);if(m==='startdate')c.start=d.textContent.trim();else if(m==='enddate')c.end=d.textContent.trim();else if(m==='instant')c.inst=d.textContent.trim();else if(m==='explicitmember'||m==='typedmember')c.seg=true;}
+   ctx[id]=c;}
+  else if(n==='nonfraction'&&el.tagName.includes(':')){const name=el.getAttribute('name');if(!name)continue;
+   const fmt=(el.getAttribute('format')||'').toLowerCase();let t=el.textContent.trim();let v;
+   if(/zero|fixed-?zero/.test(fmt)||/^[-–—]?$/.test(t))v=0;else{if(/commadecimal|numcommadecimal/.test(fmt))t=t.replace(/[.\s ]/g,'').replace(',','.');else t=t.replace(/[^0-9.]/g,'');v=parseFloat(t);}
+   if(isNaN(v))continue;v*=Math.pow(10,+(el.getAttribute('scale')||0));if(el.getAttribute('sign')==='-')v=-v;
+   (facts[name]=facts[name]||[]).push({v,c:el.getAttribute('contextref'),u:el.getAttribute('unitref')||''});}
+  else if(n==='nonnumeric'&&el.tagName.includes(':')){const name=el.getAttribute('name');if(name&&name.startsWith('dei:')&&!nn[name])nn[name]={t:el.textContent.trim(),c:el.getAttribute('contextref')};}
+ }
+ if(!Object.keys(facts).length)return null;
+ const dc=nn['dei:DocumentPeriodEndDate']&&ctx[nn['dei:DocumentPeriodEndDate'].c];
+ let E=dc?(dc.end||dc.inst):null;
+ if(!E){const cnt={};Object.values(ctx).forEach(c=>{if(c.end&&!c.seg)cnt[c.end]=(cnt[c.end]||0)+1});E=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0];}
+ const fy=(nn['dei:DocumentFiscalYearFocus']?.t||'').replace(/\D/g,'')||(E||'').slice(0,4);
+ let fp=(nn['dei:DocumentFiscalPeriodFocus']?.t||'').toUpperCase();
+ const docType=nn['dei:DocumentType']?.t||'';if(!fp)fp=/10-K|20-F|40-F|annual/i.test(docType)?'FY':'';
+ let cur='';const flow={},bal={},warn=[];
+ const pick=(name,durOk)=>(facts[name]||[]).map(f=>({...f,cx:ctx[f.c]})).filter(f=>f.cx&&!f.cx.seg&&(durOk?f.cx.end===E&&f.cx.start:f.cx.inst===E));
+ for(const [k,l] of XF){for(const name of XC[k]){const fs=pick(name,true);if(!fs.length)continue;
+   const byM={};fs.forEach(f=>{const m=monthsOf(f.cx.start,f.cx.end);if(byM[m]==null)byM[m]=f});
+   const ms=Object.keys(byM).map(Number).sort((a,b)=>a-b);const q=byM[3];const ym=ms.at(-1);
+   const conv=k==='shares'?1e-6:1e-6;if(!cur&&k!=='shares')cur=(byM[ym].u||'').replace(/^.*[_:]/,'');
+   flow[k]={q:q?q.v*conv:null,ytd:byM[ym].v*conv,months:ym,src:`${name.split(':')[1]} · ${ms.map(m=>m+'m').join(' & ')} to ${E}`};
+   if(k==='capex'){if(flow[k].q!=null)flow[k].q=Math.abs(flow[k].q);flow[k].ytd=Math.abs(flow[k].ytd)}
+   break;}}
+ const sumG=groups=>{let tot=0,found=[];for(const g of groups){for(const name of g){const f=pick(name,false)[0];if(f){tot+=f.v;found.push(name.split(':')[1]);break;}}}return found.length?{v:tot/1e6,src:found.join(' + ')+' at '+E}:null;};
+ bal.cash=sumG(XBG.cash);bal.debt=sumG(XBG.debtA)||sumG(XBG.debtB);bal.otherLiab=sumG(XBG.otherLiab);
+ const so=(facts['dei:EntityCommonStockSharesOutstanding']||[]).map(f=>f.v).reduce((a,b)=>a+b,0);
+ if(so)bal.sharesOut={v:so/1e6,src:'Cover page: EntityCommonStockSharesOutstanding (not diluted)'};
+ if(cur&&cur.toUpperCase()!=='USD')warn.push(`Amounts are in ${cur}, not USD. Keep all numbers in one currency.`);
+ if(!E)warn.push('Could not find the period end date.');
+ return{id:++xid,kind:'SEC iXBRL',file,company:nn['dei:EntityRegistrantName']?.t||'',ticker:(nn['dei:TradingSymbol']?.t||'').split(/\s/)[0],
+  fy,fp,end:E,docType,flow,bal,warn,label:'',ov:{},use:{},updBal:true};}
+
+/* ---- PDF ---- */
+async function loadPdfJs(){if(window.pdfjsLib)return;await new Promise((res,rej)=>{const s=document.createElement('script');s.src=PDFJS+'pdf.min.js';s.onload=res;s.onerror=()=>rej(new Error('Could not load the PDF reader. It needs an internet connection the first time.'));document.head.appendChild(s);});
+ pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';}
+async function pdfPages(buf){const pdf=await pdfjsLib.getDocument({data:buf}).promise;const pages=[];
+ for(let p=1;p<=pdf.numPages;p++){const tc=await(await pdf.getPage(p)).getTextContent();const rows=[];
+  tc.items.forEach(it=>{if(!it.str||!it.str.trim())return;const y=it.transform[5],x=it.transform[4];let r=rows.find(r=>Math.abs(r.y-y)<2.5);if(!r){r={y,items:[]};rows.push(r)}r.items.push({x,s:it.str});});
+  rows.sort((a,b)=>b.y-a.y);pages.push(rows.map(r=>r.items.sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim()));}
+ return pages;}
+const NUMRE=/\(\s*\$?\s*\d[\d,]*(?:\.\d+)?\s*\)|\$?\s*\d{1,3}(?:,\d{3})+(?:\.\d+)?|\$?\s*\d+(?:\.\d+)?|(?:^|\s)[—–-](?=\s|$)/g;
+function lineNums(line){const out=[];let m;NUMRE.lastIndex=0;while((m=NUMRE.exec(line))){const t=m[0].trim();let v;if(/^[—–-]$/.test(t))v=0;else{v=parseFloat(t.replace(/[^0-9.]/g,''));if(t.startsWith('('))v=-v;}
+ if(!isNaN(v))out.push({v,i:m.index});}return out;}
+const PRX={
+ revenue:[/^(total\s+)?(net\s+)?(revenues?|sales|turnover)(,?\s+net)?$/,/^total net (revenues?|sales)$/,/^revenue from contracts with customers$/],
+ opInc:[/^(total\s+)?(operating (income|profit|loss)( \((loss|income)\))?|(\(loss\) )?income( \(loss\))? from operations|(income )?\(?loss\)? from operations|operating income \(loss\))$/],
+ gaapNI:[/^net (income|earnings|loss|profit)( \((loss|income)\))?( attributable to [a-z .,&'-]+)?$/,/^profit (for|attributable to)( the)? (period|year|owners[a-z ]*)$/],
+ ocf:[/net cash.*operating activities/,/cash (generated|flows?) (from|by) operat/],
+ capex:[/^(purchases?|acquisitions?|additions?|payments?)( of| to| for)? (property|plant|capital assets|fixed assets|premises)/,/^capital expenditures?/],
+ sbc:[/(stock|share|equity)[- ]based (compensation|payments?)( expense)?$/,/^stock compensation/],
+ shares:[/^(diluted|weighted[- ]average.*diluted.*|shares used in.*diluted.*|diluted (weighted|shares).*)$/],
+ cash:[/^cash and (cash )?equivalents$/],sti:[/^(short-term investments|marketable securities|short-term marketable securities)$/],
+ debtLT:[/^(long-term debt|long-term borrowings|non-?current borrowings|senior notes)([ ,a-z-]*)$/],debtST:[/^(current portion of (long-term )?debt|short-term (debt|borrowings)|current borrowings|commercial paper)$/],
+};
+const PTYPE={is:/statements? of (consolidated )?(operations|income|earnings|comprehensive income)|income statements?|statements? of profit or loss/i,cf:/statements? of (consolidated )?cash flows?|cash flow statements?/i,bs:/balance sheets?|statements? of (consolidated )?financial position/i};
+const PFT={revenue:'is',opInc:'is',gaapNI:'is',shares:'is',ocf:'cf',capex:'cf',sbc:'cf',cash:'bs',sti:'bs',debtLT:'bs',debtST:'bs'};
+async function parsePDF(buf,file){await loadPdfJs();const pages=await pdfPages(buf);const txt=pages.map(p=>p.join('\n'));const full=txt.join('\n');
+ const unit=s=>{const m=s.match(/in (millions|thousands|billions)/i);return m?m[1].toLowerCase():null};
+ const docUnit=unit(full);const ptype=txt.map(t=>({is:PTYPE.is.test(t),cf:PTYPE.cf.test(t),bs:PTYPE.bs.test(t)}));
+ const cands={};
+ Object.keys(PRX).forEach(k=>{const list=[];pages.forEach((lines,pi)=>lines.forEach(line=>{const nums=lineNums(line);if(!nums.length)return;
+   let label=line.slice(0,nums[0].i).toLowerCase().replace(/[:$]/g,'').replace(/\s+/g,' ').trim();if(!label||label.length>90)return;
+   if(!PRX[k].some(r=>r.test(label)))return;const u=unit(txt[pi])||docUnit||'millions';let f=u==='thousands'?1e-3:u==='billions'?1e3:1;
+   if(k==='shares'){const su=txt[pi].match(/shares in (millions|thousands)/i);if(su)f=su[1].toLowerCase()==='thousands'?1e-3:1;}
+   const sc=(ptype[pi][PFT[k]]?5:0)+(nums.length>=2?1:0);
+   list.push({line,label,page:pi+1,nums:nums.map(n=>n.v*f),unit:u,sc});}));
+  list.sort((a,b)=>b.sc-a.sc||a.page-b.page);cands[k]=list.slice(0,8);});
+ const quarterly=/three months ended|quarter(ly)? (period )?ended|13 weeks ended/i.test(full);
+ const cfPage=txt.find((t,i)=>ptype[i].cf)||'';const cm=cfPage.match(/(three|six|nine|twelve) months ended|(13|26|39|52) weeks ended|years? ended/i);
+ const mm={three:3,six:6,nine:9,twelve:12,'13':3,'26':6,'39':9,'52':12};let cfM=cm?(cm[1]?mm[cm[1].toLowerCase()]:cm[2]?mm[cm[2]]:12):(quarterly?3:12);
+ const dm=full.match(/(?:period|quarter|year|months|weeks) ended\s+([A-Z][a-z]+\.? \d{1,2},? \d{4})/i);const end=dm?new Date(dm[1]):null;
+ const endS=end&&!isNaN(end)?end.toISOString().slice(0,10):'';
+ let fp=quarterly?({3:'Q1',6:'Q2',9:'Q3',12:'Q4'})[cfM]||'Q1':'FY';let fy=endS.slice(0,4);
+ const g=guessFQ(endS);if(g){fy=g.fy;if(quarterly)fp=g.fp;}
+ const x={id:++xid,kind:'PDF (check each number)',file,company:'',ticker:'',fy,fp,end:endS,isM:quarterly?3:12,cfM,cands,sel:{},col:{},flow:{},bal:{},
+  warn:[],label:'',ov:{},use:{},updBal:true};
+ if(!docUnit)x.warn.push('No "in millions/thousands" note found – assumed millions. Check the values.');
+ Object.keys(PRX).forEach(k=>{x.sel[k]=cands[k].length?0:-1;x.col[k]=0;});
+ if(!Object.values(cands).some(c=>c.length))x.warn.push('No statement lines recognised. This may be a scanned (image) PDF – type the numbers in by hand.');
+ pdfDerive(x);return x;}
+function pdfDerive(x){const val=k=>{const c=x.cands[k]?.[x.sel[k]];return c?c.nums[Math.min(x.col[k]||0,c.nums.length-1)]:null};
+ const src=k=>{const c=x.cands[k]?.[x.sel[k]];return c?`p.${c.page}: ${c.line}`:''};
+ XF.forEach(([k,,t])=>{const v=val(k);if(v==null){delete x.flow[k];return;}const m=t==='cf'?+x.cfM:+x.isM;const vv=k==='capex'?Math.abs(v):v;
+  x.flow[k]=m===3?{q:vv,ytd:vv,months:3,src:src(k)}:{q:null,ytd:vv,months:m,src:src(k)};});
+ const c=val('cash'),s=val('sti'),dl=val('debtLT'),ds=val('debtST');
+ x.bal.cash=c!=null?{v:c+(s||0),src:src('cash')+(s!=null?' + '+src('sti'):'')}:null;
+ x.bal.debt=dl!=null||ds!=null?{v:(dl||0)+(ds||0),src:[src('debtLT'),src('debtST')].filter(Boolean).join(' + ')}:null;}
+
+function guessFQ(E){if(!E)return null;const r=[...S.history].reverse().find(r=>r._meta&&r._meta.end&&['Q4','FY'].includes(r._meta.fp));if(!r)return null;
+ return secLabel({fye:r._meta.end},E);}
+/* ---- turn an extract into one table row ---- */
+function resolveX(x){const mode=S.periodType,qi=fpToQ(x.fp),row={period:x.label||xLabel(x.fp,x.fy,mode),_meta:{fy:x.fy,fp:x.fp,end:x.end,src:x.file}},notes={};
+ XF.forEach(([k,l])=>{const f=x.flow[k];if(!f){notes[k]='not found';return;}let v=null;
+  if(mode==='Annual'){if(f.months===12)v=f.ytd;else notes[k]=`report covers ${f.months} months – needs an annual report`;}
+  else if(k==='shares'){v=f.q??f.ytd;if(f.q==null&&f.months>3)notes[k]=`${f.months}-month average (approx.)`;}
+  else if(f.q!=null)v=f.q;
+  else{const n=Math.round(f.months/3);const prior=S.history.filter(r=>r._meta&&r._meta.fy==x.fy&&fpToQ(r._meta.fp)<qi&&fpToQ(r._meta.fp)>qi-n&&num(r[k])!=null);
+   if(prior.length===n-1){v=f.ytd-prior.reduce((a,r)=>a+num(r[k]),0);notes[k]=`${f.months}-month total minus ${prior.map(r=>r.period).join(', ')}`;}
+   else notes[k]=`report only has a ${f.months}-month total – add the earlier quarter(s) of FY${yy(x.fy)} first`;}
+  if(x.ov[k]!==undefined)v=x.ov[k];row[k]=v==null?null:Math.round(v*10)/10;});
+ return{row,notes};}
+
+/* ---- review cards ---- */
+function renderX(){const box=document.getElementById('xcards');
+ box.innerHTML=XS.map(x=>{if(x.sec)return renderSec(x);const {row,notes}=resolveX(x);const pdf=!!x.cands;
+  const fRows=XF.map(([k,l])=>{const f=x.flow[k];const inc=x.use[k]!==false&&row[k]!=null;
+   const cand=pdf?`<td><select onchange="xSel(${x.id},'${k}',this.value)">${(x.cands[k]||[]).map((c,i)=>`<option value="${i}" ${i==x.sel[k]?'selected':''}>p.${c.page} · ${esc(c.label).slice(0,38)} · ${c.nums.map(n=>n.toLocaleString(undefined,{maximumFractionDigits:1})).join(' | ')}</option>`).join('')}<option value="-1" ${x.sel[k]==-1?'selected':''}>– none –</option></select>
+    ${(x.cands[k]?.[x.sel[k]]?.nums.length>1)?`<br><span class="note">column: </span><select onchange="xCol(${x.id},'${k}',this.value)">${x.cands[k][x.sel[k]].nums.map((n,i)=>`<option value="${i}" ${i==x.col[k]?'selected':''}>${i+1}: ${n.toLocaleString(undefined,{maximumFractionDigits:1})}</option>`).join('')}</select>`:''}</td>`:'';
+   return`<tr><td>${l}</td>${cand}<td>${f?(f.q!=null?fmtN(f.q)+' (3m)':'')+(f.months!==3?(f.q!=null?'<br>':'')+fmtN(f.ytd)+` (${f.months}m)`:''):'–'}</td>
+   <td><input type="number" step="any" value="${row[k]??''}" onchange="xOv(${x.id},'${k}',this.value)"></td><td><input type="checkbox" ${inc?'checked':''} onchange="xUse(${x.id},'${k}',this.checked)"></td>
+   <td class="src">${esc(notes[k]||'')}${f?.src?`<br>${esc(f.src).slice(0,140)}`:''}</td></tr>`}).join('');
+  const bRows=[...XBAL,['sharesOut','Shares outstanding (cover)']].filter(([k])=>x.bal[k]).map(([k,l])=>`<tr><td>${l}</td>${pdf?'<td></td>':''}<td>${fmtN(x.bal[k].v)}</td><td colspan="2">${k==='sharesOut'?'<span class="note">info only</span>':''}</td><td class="src">${esc(x.bal[k].src).slice(0,140)}</td></tr>`).join('');
+  return`<div class="xcard"><h4><span class="pill ${pdf?'warn':'good'}">${x.kind}</span>${esc(x.file)}</h4>
+  <div class="meta">${x.company?`<b>${esc(x.company)}</b>`:''}${x.ticker?` (${esc(x.ticker)})`:''} ${x.docType?esc(x.docType):''}
+   <label>Period end <input type="date" value="${x.end||''}" onchange="xSet(${x.id},'end',this.value)"></label>
+   <label>Fiscal year <input style="width:70px" value="${esc(x.fy)}" onchange="xSet(${x.id},'fy',this.value)"></label>
+   <label>Fiscal period <select onchange="xSet(${x.id},'fp',this.value)">${['Q1','Q2','Q3','Q4','FY'].map(p=>`<option ${p===x.fp?'selected':''}>${p}</option>`).join('')}</select></label>
+   ${pdf?`<label>Income statement column covers <select onchange="xSet(${x.id},'isM',this.value)">${[3,6,9,12].map(m=>`<option ${m==x.isM?'selected':''}>${m}</option>`).join('')}</select> months</label>
+   <label>Cash-flow statement covers <select onchange="xSet(${x.id},'cfM',this.value)">${[3,6,9,12].map(m=>`<option ${m==x.cfM?'selected':''}>${m}</option>`).join('')}</select> months</label>`:''}
+   <label>Row name <input style="width:100px" value="${esc(row.period)}" onchange="xSet(${x.id},'label',this.value)"></label></div>
+  ${x.warn.length?`<div class="warnings">${x.warn.map(esc).join('<br>')}</div>`:''}
+  <div class="tw"><table><tr><th>Item ($M)</th>${pdf?'<th style="text-align:left">Line found in report</th>':''}<th>In report</th><th>Will insert</th><th>Use</th><th style="text-align:left">How / where</th></tr>${fRows}
+  ${bRows?`<tr><th colspan="${pdf?6:5}" style="text-align:left">Balance sheet at period end → step 1</th></tr>${bRows}`:''}</table></div>
+  ${bRows?`<label class="note" style="display:block;margin-top:8px"><input type="checkbox" ${x.updBal?'checked':''} onchange="xSet(${x.id},'updBal',this.checked)"> Also update step 1 (cash, debt, other items${x.company?', company name/ticker':''}) and last-12-month revenue</label>`:''}
+  <div class="acts"><button class="primary" onclick="xAdd(${x.id})">Add to history table</button><button onclick="xDrop(${x.id})">Discard</button></div></div>`}).join('')+
+  (XS.filter(x=>!x.sec).length>1?`<div class="acts" style="margin-bottom:14px"><button class="primary" onclick="xAddAll()">Add all ${XS.filter(x=>!x.sec).length} reports (oldest first)</button></div>`:'');}
+function fmtN(v){return v==null?'–':v.toLocaleString(undefined,{maximumFractionDigits:1})}
+const xGet=id=>XS.find(x=>x.id===id);
+function xSet(id,k,v){const x=xGet(id);x[k]=v;if(k==='fp'||k==='fy')x.label='';if(x.cands&&(k==='isM'||k==='cfM'))pdfDerive(x);renderX();}
+function xSel(id,k,v){const x=xGet(id);x.sel[k]=+v;x.col[k]=0;delete x.ov[k];pdfDerive(x);renderX();}
+function xCol(id,k,v){const x=xGet(id);x.col[k]=+v;delete x.ov[k];pdfDerive(x);renderX();}
+function xOv(id,k,v){xGet(id).ov[k]=num(v);renderX();}
+function xUse(id,k,v){xGet(id).use[k]=v;}
+function xDrop(id){XS=XS.filter(x=>x.id!==id);renderX();}
+function xAdd(id,quiet){const x=xGet(id);const {row}=resolveX(x);XF.forEach(([k])=>{if(x.use[k]===false)delete row[k]});
+ S.history=S.history.filter(r=>Object.keys(r).some(k=>k!=='period'&&r[k]!=null&&r[k]!=='')||r.period);
+ const i=S.history.findIndex(r=>r.period&&r.period===row.period);
+ if(i>=0)S.history[i]=Object.assign({},S.history[i],Object.fromEntries(Object.entries(row).filter(([,v])=>v!=null)));else S.history.push(row);
+ S.history=S.history.map((r,j)=>({r,j})).sort((a,b)=>(a.r._meta?.end||'').localeCompare(b.r._meta?.end||'')||a.j-b.j).map(o=>o.r);
+ if(x.updBal){['cash','debt','otherLiab'].forEach(k=>{if(x.bal[k])S.company[k]=+x.bal[k].v.toFixed(1)});
+  if(x.company&&!S.company.name)S.company.name=x.company;if(x.ticker&&!S.company.ticker)S.company.ticker=x.ticker;
+  if(num(row.shares)&&!num(S.company.shares))S.company.shares=+row.shares.toFixed(1);
+  const rv=S.history.map(r=>num(r.revenue)).filter(v=>v!=null);
+  if(S.periodType==='Quarterly'&&rv.length>=4)S.company.ltmRevenue=+rv.slice(-4).reduce((a,b)=>a+b,0).toFixed(1);
+  if(S.periodType==='Annual'&&rv.length)S.company.ltmRevenue=rv.at(-1);}
+ XS=XS.filter(y=>y.id!==id);save();if(!quiet){renderAll();renderX();}}
+function xAddAll(){[...XS].filter(x=>!x.sec).sort((a,b)=>(a.end||'').localeCompare(b.end||'')).forEach(x=>xAdd(x.id,true));renderAll();renderX();}
+/* ---- SEC EDGAR "companyfacts" JSON (from the GitHub Action or saved from data.sec.gov) ---- */
+function secLinks(){const t=(document.getElementById('secT').value||'').trim().toUpperCase(),c=(document.getElementById('secC').value||'').replace(/\D/g,'');
+ document.getElementById('secFind').href='https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+encodeURIComponent(t||'MRVL')+'&type=10-Q&owner=include&count=40';
+ const cik=c?c.padStart(10,'0'):'';document.getElementById('secData').href=cik?`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`:'javascript:alert("Enter the CIK number first")';
+ document.getElementById('secFil').href='https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+encodeURIComponent(c||t||'MRVL')+'&type=10-&owner=include&count=40';}
+function secMerge(facts,names,dur){const map={};let used=[];
+ for(const n of names){const [tx,c]=n.split(':');const o=facts?.[tx]?.[c];if(!o||!o.units)continue;const uk=Object.keys(o.units);
+  const u=uk.includes('USD')?'USD':uk.includes('shares')?'shares':uk[0];let added=0;
+  for(const e of o.units[u]){if(dur!==!!e.start)continue;const key=(e.start||'')+'|'+e.end;if(map[key]&&map[key].c!==c)continue;
+   if(!map[key]||e.filed>map[key].filed){map[key]={...e,c,u};added++;}}if(added)used.push(c);}
+ return{list:Object.values(map),used};}
+function secQuarters(list){const byEnd={};list.forEach(e=>{const m=monthsOf(e.start,e.end);if([3,6,9,12].includes(m))(byEnd[e.end]=byEnd[e.end]||[]).push({...e,m});});
+ const out={};Object.keys(byEnd).sort().forEach(E=>{const L=byEnd[E].sort((a,b)=>a.m-b.m);
+  if(L[0].m===3){out[E]={v:L[0].val,how:'3-month figure'};return;}
+  for(const y of L){const p=list.find(p=>p.start===y.start&&p.end<E&&monthsOf(p.start,p.end)===y.m-3);if(p){out[E]={v:y.val-p.val,how:`${y.m}-month minus ${y.m-3}-month total`};return;}}});
+ return out;}
+function parseSEC(j,file){const facts=j.facts;if(!facts)return null;
+ const F={};XF.forEach(([k])=>F[k]=secMerge(facts,XC[k],true));
+ const fyList=F.revenue.list.filter(e=>monthsOf(e.start,e.end)===12).map(e=>e.end).sort();
+ const fye=fyList.at(-1)||null;
+ return{id:++xid,kind:'SEC EDGAR data',sec:true,file,company:j.entityName||'',ticker:j.ticker||'',cik:j.cik,F,facts,fye,filings:j.filings||[],fetched:j.fetched||'',n:S.periodType==='Quarterly'?12:10,mode:S.periodType,updBal:true,warn:[]};}
+function secLabel(x,E){if(!x.fye)return E;const fm=+x.fye.slice(5,7),fd=+x.fye.slice(8,10);const e=new Date(E);let F=new Date(Date.UTC(e.getUTCFullYear(),fm-1,fd));
+ if(F<e-15*864e5)F=new Date(Date.UTC(e.getUTCFullYear()+1,fm-1,fd));const d=monthsOf(E,F.toISOString().slice(0,10));const q=4-Math.round(d/3);
+ return{fy:String(F.getUTCFullYear()),fp:'Q'+Math.min(4,Math.max(1,q))};}
+function secRows(x){const rows=[];const mode=x.mode;
+ if(mode==='Annual'){const ends=[...new Set(x.F.revenue.list.filter(e=>monthsOf(e.start,e.end)===12).map(e=>e.end))].sort().slice(-x.n);
+  ends.forEach(E=>{const L=x.fye?secLabel(x,E):{fy:E.slice(0,4)};const r={period:'FY'+yy(L.fy),_meta:{fy:L.fy,fp:'FY',end:E,src:'SEC'}};
+   XF.forEach(([k])=>{const e=x.F[k].list.find(e=>e.end===E&&monthsOf(e.start,e.end)===12);if(e)r[k]=(k==='capex'?Math.abs(e.val):e.val)/1e6;});rows.push(r);});}
+ else{const Q={};XF.forEach(([k])=>Q[k]=k==='shares'?null:secQuarters(x.F[k].list));
+  const ends=Object.keys(Q.revenue).sort().slice(-x.n);
+  ends.forEach(E=>{const L=secLabel(x,E);const r={period:L.fp?`${L.fp} FY${yy(L.fy)}`:E,_meta:{fy:L.fy,fp:L.fp,end:E,src:'SEC'}};
+   XF.forEach(([k])=>{if(k==='shares'){const s=x.F.shares.list.filter(e=>e.end===E).sort((a,b)=>monthsOf(a.start,a.end)-monthsOf(b.start,b.end))[0];if(s)r.shares=s.val/1e6;return;}
+    const q=Q[k][E];if(q)r[k]=(k==='capex'?Math.abs(q.v):q.v)/1e6;});rows.push(r);});}
+ return rows;}
+function secBal(x){const ends=[];const inst={};
+ const sumG=groups=>{let tot=0,found=[];const E=x._E;for(const g of groups){for(const n of g){const m=secMerge(x.facts,[n],false).list.find(e=>e.end===E);if(m){tot+=m.val;found.push(n.split(':')[1]);break;}}}return found.length?{v:tot/1e6,src:found.join(' + ')+' at '+E}:null;};
+ const cashL=secMerge(x.facts,XBG.cash[0],false).list.map(e=>e.end).sort();x._E=cashL.at(-1);
+ if(!x._E)return{};return{cash:sumG(XBG.cash),debt:sumG(XBG.debtA)||sumG(XBG.debtB),otherLiab:sumG(XBG.otherLiab)};}
+function renderSec(x){const rows=secRows(x);const bal=secBal(x);x._rows=rows;x._bal=bal;
+ const cols=XF;const f1=v=>v==null?'–':v.toLocaleString(undefined,{maximumFractionDigits:1});
+ return`<div class="xcard"><h4><span class="pill good">${x.kind}</span>${esc(x.company)} ${x.ticker?'('+esc(x.ticker)+')':''}<span class="note">${esc(x.file)}${x.fetched?' · fetched '+esc(x.fetched.slice(0,10)):''}</span></h4>
+ <div class="meta"><label>Periods <select onchange="xSet(${x.id},'mode',this.value)"><option ${x.mode==='Quarterly'?'selected':''}>Quarterly</option><option ${x.mode==='Annual'?'selected':''}>Annual</option></select></label>
+  <label>How many <select onchange="xSet(${x.id},'n',+this.value)">${[4,8,12,16,20,40].map(n=>`<option ${n==x.n?'selected':''}>${n}</option>`).join('')}</select></label>
+  <span>Q4 and cash-flow quarters are worked out from year-to-date totals.</span></div>
+ <div class="tw"><table><tr><th>Period</th>${cols.map(([,l])=>`<th>${l}</th>`).join('')}<th>Ends</th></tr>
+ ${rows.map(r=>`<tr><td>${esc(r.period)}</td>${cols.map(([k])=>`<td>${f1(r[k])}</td>`).join('')}<td>${r._meta.end}</td></tr>`).join('')}</table></div>
+ <div class="note" style="margin-top:6px">Source tags: ${XF.map(([k,l])=>`${l}: ${x.F[k].used.join(', ')||'not reported'}`).join(' · ')}. Adjusted (non-GAAP) net income is not in SEC data – type it from press releases.</div>
+ ${Object.values(bal).some(Boolean)?`<div class="note" style="margin-top:6px">Balance sheet ${esc(x._E)}: ${XBAL.filter(([k])=>bal[k]).map(([k,l])=>`${l} ${f1(bal[k].v)}`).join(' · ')}</div>`:''}
+ ${x.filings.length?`<div class="note" style="margin-top:6px">Latest filings: ${x.filings.slice(0,8).map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.form)} ${esc(f.reportDate||f.filingDate)}</a>`).join(' · ')}</div>`:''}
+ <label class="note" style="display:block;margin-top:8px"><input type="checkbox" ${x.updBal?'checked':''} onchange="xSet(${x.id},'updBal',this.checked)"> Also update step 1 (name, ticker, cash, debt, other items, diluted shares, last-12-month revenue)</label>
+ <div class="acts"><button class="primary" onclick="secApply(${x.id})">Replace history with these ${rows.length} periods</button><button onclick="xDrop(${x.id})">Discard</button></div></div>`;}
+function secApply(id){const x=xGet(id);const rows=x._rows;const old=Object.fromEntries(S.history.filter(r=>r.period).map(r=>[r.period,r]));
+ rows.forEach(r=>{if(old[r.period]?.adjNI!=null)r.adjNI=old[r.period].adjNI;});
+ S.history=rows.map(r=>{const o={...r};XF.forEach(([k])=>{if(o[k]!=null)o[k]=+o[k].toFixed(1)});return o;});S.periodType=x.mode;
+ if(x.updBal){const b=x._bal;['cash','debt','otherLiab'].forEach(k=>{if(b[k])S.company[k]=+b[k].v.toFixed(1)});
+  if(x.company)S.company.name=x.company;if(x.ticker)S.company.ticker=x.ticker;
+  const sh=rows.map(r=>r.shares).filter(v=>v!=null);if(sh.length)S.company.shares=+sh.at(-1).toFixed(1);
+  const rv=rows.map(r=>r.revenue).filter(v=>v!=null);S.company.ltmRevenue=x.mode==='Quarterly'?(rv.length>=4?+rv.slice(-4).reduce((a,b)=>a+b,0).toFixed(1):S.company.ltmRevenue):(rv.at(-1)??S.company.ltmRevenue);}
+ XS=XS.filter(y=>y.id!==id);save();renderAll();renderX();}
+
+async function handleFiles(files){const box=document.getElementById('xcards');
+ for(const f of files){box.insertAdjacentHTML('afterbegin',`<p class="note" id="xload">Reading ${esc(f.name)}…</p>`);
+  try{let x=null;if(/\.pdf$/i.test(f.name))x=await parsePDF(await f.arrayBuffer(),f.name);
+   else if(/\.json$/i.test(f.name)){const j=JSON.parse(await f.text());if(j.facts)x=parseSEC(j,f.name);else if(j.company&&j.scen){load(j);}else alert(`${f.name}: not SEC company data or a workbook file.`);}
+   else{x=parseIXBRL(await f.text(),f.name);
+    if(!x){alert(`${f.name}: no XBRL tags found. On SEC EDGAR open the filing's main document, remove "ix?doc=/" from the web address, then save the page as "HTML only". Or use the PDF.`);}}
+   if(x)XS.push(x);}catch(e){alert(`${f.name}: ${e.message}`);}
+  document.getElementById('xload')?.remove();}
+ XS.sort((a,b)=>(a.end||'').localeCompare(b.end||''));renderX();}
+(function(){const d=document.getElementById('drop');['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('over')}));
+ ['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('over')}));d.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));})();
+
+/* ---------- load / save files ---------- */
+function load(obj){S=Object.assign(blank(),JSON.parse(JSON.stringify(obj)));S.company=Object.assign(blank().company,obj.company||{});S.global=Object.assign(blank().global,obj.global||{});
+ S.scen=Object.assign(blank().scen,obj.scen||{});if(!S.history?.length)S.history=blank().history;save();renderAll();}
+function newBlank(){if(confirmLose())load(blank())}
+function loadExample(){if(confirmLose())load(EXAMPLE)}
+function confirmLose(){return true}
+function exportJSON(){const n=`${(S.company.ticker||'company').toUpperCase()}-${S.company.asOf||new Date().toISOString().slice(0,10)}.json`;
+ const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function importJSON(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{load(JSON.parse(r.result))}catch(e){alert('That file is not a valid workbook JSON.')}};r.readAsText(f);inp.value='';}
+
+/* ---------- start: ?data=data/FILE.json loads a saved file from your repo ---------- */
+(async function(){const p=new URLSearchParams(location.search).get('data');
+ if(p){try{const r=await fetch(p);if(r.ok){load(await r.json());return;}}catch(e){}}
+ let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+ load(saved||EXAMPLE);secLinks();})();
+</script>
+</body>
+</html>

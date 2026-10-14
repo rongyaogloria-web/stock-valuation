@@ -1,0 +1,6 @@
+# Tickers refreshed automatically every Monday by the "Fetch SEC data" GitHub Action.
+# One per line. US-listed SEC filers only. Lines starting with # are ignored.
+MRVL
+MU
+GOOGL
+TSM
