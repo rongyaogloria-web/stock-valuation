@@ -14,7 +14,7 @@ The SEC asks every automated user to identify themselves. Set a repository
 variable SEC_USER_AGENT such as "Jane Doe jane@example.com"
 (Settings > Secrets and variables > Actions > Variables).
 """
-import json, os, sys, time, urllib.request, urllib.error
+import gzip, json, os, sys, time, urllib.request, urllib.error, zlib
 from datetime import datetime, timezone
 
 UA = os.environ.get("SEC_USER_AGENT", "").strip() or "StockValuationWorkbook (personal research)"
@@ -53,15 +53,29 @@ FORMS = {"10-Q", "10-K", "20-F", "40-F", "10-Q/A", "10-K/A", "20-F/A"}
 
 
 def get(url):
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Encoding": "identity"})
+    """Download JSON from the SEC. Handles compressed (gzip) replies and retries."""
+    req = urllib.request.Request(url, headers={
+        "User-Agent": UA, "Accept-Encoding": "gzip, deflate", "Accept": "application/json"})
+    last = None
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
-                return json.load(r)
+            with urllib.request.urlopen(req, timeout=180) as r:
+                body = r.read()
+                enc = (r.headers.get("Content-Encoding") or "").lower()
+            if enc == "gzip" or body[:2] == b"\x1f\x8b":
+                body = gzip.decompress(body)
+            elif enc == "deflate":
+                body = zlib.decompress(body)
+            return json.loads(body.decode("utf-8"))
         except urllib.error.HTTPError as e:
-            if e.code in (429, 503) and attempt < 2:
-                time.sleep(5 * (attempt + 1)); continue
-            raise
+            last = e
+            if e.code in (403, 404):
+                raise RuntimeError(f"HTTP {e.code} from SEC for {url}"
+                                   + (" (check SEC_USER_AGENT is set to your name and email)" if e.code == 403 else ""))
+        except Exception as e:  # timeouts, cut-off downloads, bad JSON
+            last = e
+        time.sleep(5 * (attempt + 1))
+    raise RuntimeError(f"{type(last).__name__}: {last} ({url})")
 
 
 def finally_sleep():
@@ -112,16 +126,20 @@ def main():
     m = get("https://www.sec.gov/files/company_tickers.json")
     finally_sleep()
     lookup = {v["ticker"].upper(): str(v["cik_str"]).zfill(10) for v in m.values()}
-    failed = []
+    failed, log = [], []
+
+    def say(msg):
+        print(msg); log.append(msg)
+
     for t in tickers:
         cik = lookup.get(t) or lookup.get(t.replace(".", "-"))
         if not cik:
-            print(f"{t}: not found in SEC ticker list (foreign or delisted?)"); failed.append(t); continue
+            say(f"{t}: FAILED - not in the SEC ticker list (check spelling; non-US companies may not file with the SEC)"); failed.append(t); continue
         try:
             cf = get(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"); finally_sleep()
             sub = get(f"https://data.sec.gov/submissions/CIK{cik}.json"); finally_sleep()
         except Exception as e:
-            print(f"{t}: download failed: {e}"); failed.append(t); continue
+            say(f"{t}: FAILED - {e}"); failed.append(t); continue
         doc = {
             "source": "SEC EDGAR (data.sec.gov companyfacts + submissions)",
             "fetched": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -131,9 +149,12 @@ def main():
         }
         with open(os.path.join(OUT, f"{t}.json"), "w") as f:
             json.dump(doc, f, separators=(",", ":"))
-        print(f"{t}: saved data/sec/{t}.json ({doc['entityName']}, {len(doc['filings'])} recent filings)")
-    if failed and len(failed) == len(tickers):
-        sys.exit(1)
+        n_q = sum(len(u) for tax in doc["facts"].values() for c in tax.values() for u in c["units"].values())
+        say(f"{t}: OK - {doc['entityName']}, {n_q} data points, {len(doc['filings'])} recent filings")
+    with open(os.path.join(OUT, "_last_run.log"), "w") as f:
+        f.write(f"Run {datetime.now(timezone.utc).isoformat(timespec='seconds')}\n" + "\n".join(log) + "\n")
+    if failed:
+        sys.exit(f"Failed for: {', '.join(failed)} - see the log above or data/sec/_last_run.log")
 
 
 if __name__ == "__main__":
