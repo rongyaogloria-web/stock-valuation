@@ -46,6 +46,8 @@ The data refreshes **every Monday**, and whenever you edit `data/watchlist.txt` 
 
 **P/E or P/S:** step 5 values the company when you "sell" it at the end. Profitable companies are valued on profit (**P/E** × final-year profit per share). Loss-making companies are switched automatically to sales (**P/S** × final-year sales per share). The box *Selling multiple based on* says which one is used and why, and you can override it.
 
+**Foreign companies (e.g. TSMC) – upload their quarterly reports:** SEC data for foreign companies is yearly only. Open the company in the tool; in step 3 click **Upload a report for TSM on GitHub** (or open the folder `data/reports/TSM/` → Add file → Upload files) and drop the quarterly report PDFs (and the annual report). GitHub reads them in 1–2 minutes and keeps the original files as your reference library. The tool then switches to quarterly history, lists every report with a link to the PDF, and shows (on hover) the page and line each number came from. Upload every quarter: single quarters are worked out from year-to-date totals, and Q4 = annual report minus Q1–Q3. PDFs must have selectable text (not scans). If a number is wrong, correct it in the history table – corrections are kept.
+
 **Add or remove companies:** edit `data/watchlist.txt` on GitHub (pencil icon → one ticker per line → Commit). About a minute later the new button appears on the web page (refresh the page).
 
 **Keep your valuation assumptions:** your edits are remembered in your browser automatically. To keep them permanently (and on every device), click **Save file**, rename the download to `TICKER.json` (e.g. `MU.json`), and upload it to the **`data/workbooks/`** folder on GitHub (Add file → Upload files → Commit). Next time you click that company, your assumptions load together with the fresh SEC numbers.
@@ -219,6 +221,8 @@ data/workbooks/MRVL.json          your saved Marvell assumptions (loads with the
 data/watchlist.txt                tickers refreshed from the SEC every Monday
 data/sec/                         SEC data saved by the GitHub Action (one file per ticker)
 data/sec-data.js                  everything packed for the web page (built automatically)
+data/reports/TICKER/              your uploaded quarterly/annual reports (originals kept)
+scripts/extract_reports.py        reads the numbers out of those reports
 scripts/fetch_sec.py              the downloader the Action runs (also runs on any PC: python scripts/fetch_sec.py MRVL)
 .github/workflows/fetch-sec.yml   the GitHub Action schedule / Run button
 ```

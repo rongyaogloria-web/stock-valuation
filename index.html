@@ -171,6 +171,7 @@ footer{max-width:1080px;margin:0 auto;padding:10px 16px 40px;color:var(--muted);
     <label class="f"><span class="fl">Periods are</span><div class="in"><select data-path="periodType"><option>Annual</option><option>Quarterly</option></select></div>
     <small>Choose Quarterly if you enter quarters; last-12-month figures then add up the latest 4 rows.</small></label>
   </div>
+  <div id="rep-box"></div>
   <div class="drop" id="drop">
     <div><b>Auto-fill from a report</b> – drop a 10-Q / 10-K / annual-report file here, or <button onclick="document.getElementById('xfile').click()">Choose files…</button></div>
     <div class="note">Best: the SEC filing saved as <b>.htm</b> (exact, tagged numbers). Also works: <b>PDF</b> quarterly/annual reports (best-guess – you confirm each number). You can drop several reports at once; add them oldest first.</div>
@@ -373,11 +374,13 @@ function addRow(){S.history.push({period:''});renderHist();save();recalc()}
 function delRow(){if(S.history.length>1){S.history.pop();renderHist();save();recalc()}}
 
 document.addEventListener('input',e=>{const el=e.target;if(!el.dataset||!el.dataset.path)return;if(el.dataset.path==='notes')S._autoNotes=false;
+ const hm=el.dataset.path.match(/^history\.(\d+)\.(\w+)$/);if(hm&&hm[2]!=='period'){const r=S.history[+hm[1]];if(r&&r.period){S._edited=S._edited||{};S._edited[r.period+'|'+hm[2]]=el.dataset.num==='1'?num(el.value):el.value;}}
  let v=el.dataset.chk?el.checked:el.value;if(el.dataset.num==='1')v=num(v);setP(el.dataset.path,v);save();recalc();});
 document.addEventListener('change',e=>{const el=e.target;if(el.dataset&&el.dataset.chk){setP(el.dataset.path,el.checked);save();recalc();}});
 
 /* ---------- formatting ---------- */
-const f$=(v,d=0)=>v==null||!isFinite(v)?'–':(v<0?'-':'')+'$'+Math.abs(v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
+let CURSYM='$';
+const f$=(v,d=0)=>v==null||!isFinite(v)?'–':(v<0?'-':'')+CURSYM+Math.abs(v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
 const fM=v=>v==null||!isFinite(v)?'–':(v<0?'-':'')+'$'+(Math.abs(v)>=1000?(Math.abs(v)/1000).toFixed(1)+'B':Math.abs(v).toFixed(0)+'M');
 const fP=(v,d=0)=>v==null||!isFinite(v)?'–':(v*100).toFixed(d)+'%';
 const fX=v=>v==null||!isFinite(v)?'–':v.toFixed(1)+'x';
@@ -421,6 +424,7 @@ function ltm(arr,key){const q=S.periodType==='Quarterly';const vals=arr.map(x=>x
 
 /* ---------- recalc & outputs ---------- */
 function recalc(){
+ CURSYM=S._cur&&S._cur!=='USD'&&S._local?({TWD:'NT$',JPY:'¥',EUR:'€',HKD:'HK$',GBP:'£',CNY:'¥',KRW:'₩',INR:'₹'}[S._cur]||S._cur+' '):'$';
  const c=S.company,price=num(c.price);
  document.getElementById('title-co').textContent=[c.ticker,c.name].filter(Boolean).join(' · ');
  // missing required data
@@ -471,7 +475,7 @@ function recalc(){
  document.getElementById('autoflags').innerHTML=fl.length?fl.map(([c,t])=>`<div class="flag"><span class="pill ${c}">${c==='good'?'OK':c==='warn'?'Watch':'Red flag'}</span><span>${t}</span></div>`).join(''):'<p class="note">Enter history in step 3 to see checks.</p>';
  document.querySelectorAll('[data-chk]').forEach(el=>el.checked=!!getP(el.dataset.path));
 
- starterBox();
+ starterBox();repBox();
  document.querySelectorAll('[data-why]').forEach(el=>{const w=(S._why||{})[el.dataset.why];el.textContent=w?'Auto: '+w:'';});
  const VM=valMethod();document.querySelectorAll('[data-f$=".exit"]').forEach(el=>{const fl=el.querySelector('.fl');if(fl)fl.innerHTML=`Selling ${VM.m} at the end<span class="req">*</span>`;
   const sm=el.querySelector('small');if(sm)sm.textContent=VM.m==='P/S'?'Price ÷ sales per share a buyer would pay then. Mature software 4–8x, hardware 1–3x, retail <1x.':'Price ÷ profit per share a buyer would pay then. Mature good business 15–25x.';});
@@ -639,13 +643,13 @@ function lineNums(line){const out=[];let m;NUMRE.lastIndex=0;while((m=NUMRE.exec
 const PRX={
  revenue:[/^(total\s+)?(net\s+)?(revenues?|sales|turnover)(,?\s+net)?$/,/^total net (revenues?|sales)$/,/^revenue from contracts with customers$/],
  opInc:[/^(total\s+)?(operating (income|profit|loss)( \((loss|income)\))?|(\(loss\) )?income( \(loss\))? from operations|(income )?\(?loss\)? from operations|operating income \(loss\))$/],
- gaapNI:[/^net (income|earnings|loss|profit)( \((loss|income)\))?( attributable to [a-z .,&'-]+)?$/,/^profit (for|attributable to)( the)? (period|year|owners[a-z ]*)$/],
+ gaapNI:[/^net (income|earnings|loss|profit)( \((loss|income)\))?( for the (period|year))?( attributable to [a-z .,&'-]+)?$/,/^profit (for|attributable to)( the)? (period|year|owners[a-z ]*)$/],
  ocf:[/net cash.*operating activities/,/cash (generated|flows?) (from|by) operat/],
  capex:[/^(purchases?|acquisitions?|additions?|payments?)( of| to| for)? (property|plant|capital assets|fixed assets|premises)/,/^capital expenditures?/],
  sbc:[/(stock|share|equity)[- ]based (compensation|payments?)( expense)?$/,/^stock compensation/],
  shares:[/^(diluted|weighted[- ]average.*diluted.*|shares used in.*diluted.*|diluted (weighted|shares).*)$/],
  cash:[/^cash and (cash )?equivalents$/],sti:[/^(short-term investments|marketable securities|short-term marketable securities)$/],
- debtLT:[/^(long-term debt|long-term borrowings|non-?current borrowings|senior notes)([ ,a-z-]*)$/],debtST:[/^(current portion of (long-term )?debt|short-term (debt|borrowings)|current borrowings|commercial paper)$/],
+ debtLT:[/^(long-term debt|long-term borrowings|non-?current borrowings|senior notes|bonds payable|long-term bank loans|corporate bonds)([ ,a-z-]*)$/],debtST:[/^(current portion of (long-term )?debt|short-term (debt|borrowings)|current borrowings|commercial paper)$/],
 };
 const PTYPE={is:/statements? of (consolidated )?(operations|income|earnings|comprehensive income)|income statements?|statements? of profit or loss/i,cf:/statements? of (consolidated )?cash flows?|cash flow statements?/i,bs:/balance sheets?|statements? of (consolidated )?financial position/i};
 const PFT={revenue:'is',opInc:'is',gaapNI:'is',shares:'is',ocf:'cf',capex:'cf',sbc:'cf',cash:'bs',sti:'bs',debtLT:'bs',debtST:'bs'};
@@ -653,15 +657,15 @@ async function parsePDF(buf,file){await loadPdfJs();const pages=await pdfPages(b
  const unit=s=>{const m=s.match(/in (millions|thousands|billions)/i);return m?m[1].toLowerCase():null};
  const docUnit=unit(full);const ptype=txt.map(t=>({is:PTYPE.is.test(t),cf:PTYPE.cf.test(t),bs:PTYPE.bs.test(t)}));
  const cands={};
- Object.keys(PRX).forEach(k=>{const list=[];pages.forEach((lines,pi)=>lines.forEach(line=>{const nums=lineNums(line);if(!nums.length)return;
+ Object.keys(PRX).forEach(k=>{const list=[];pages.forEach((lines,pi)=>lines.forEach(line=>{line=line.replace(/\((?:notes?)\s*[\d,\sand&]+\)/gi,' ');const nums=lineNums(line);if(!nums.length)return;
    let label=line.slice(0,nums[0].i).toLowerCase().replace(/[:$]/g,'').replace(/\s+/g,' ').trim();if(!label||label.length>90)return;
    if(!PRX[k].some(r=>r.test(label)))return;const u=unit(txt[pi])||docUnit||'millions';let f=u==='thousands'?1e-3:u==='billions'?1e3:1;
    if(k==='shares'){const su=txt[pi].match(/shares in (millions|thousands)/i);if(su)f=su[1].toLowerCase()==='thousands'?1e-3:1;}
-   const sc=(ptype[pi][PFT[k]]?5:0)+(nums.length>=2?1:0);
+   const sc=(ptype[pi][PFT[k]]?5:0)+(pages[pi].filter(l=>lineNums(l).length>=2).length>=3?2:0)+(nums.length>=2?1:0)+(k==='gaapNI'&&/attributable to .*(parent|owners|shareholders|stockholders|company)/.test(label)?1:0);
    list.push({line,label,page:pi+1,nums:nums.map(n=>n.v*f),unit:u,sc});}));
   list.sort((a,b)=>b.sc-a.sc||a.page-b.page);cands[k]=list.slice(0,8);});
  const quarterly=/three months ended|quarter(ly)? (period )?ended|13 weeks ended/i.test(full);
- const cfPage=txt.find((t,i)=>ptype[i].cf)||'';const cm=cfPage.match(/(three|six|nine|twelve) months ended|(13|26|39|52) weeks ended|years? ended/i);
+ const ocfC=cands.ocf&&cands.ocf[0];const cfPage=ocfC?txt[ocfC.page-1]:(txt.find((t,i)=>ptype[i].cf&&pages[i].filter(l=>lineNums(l).length>=2).length>=3)||'');const cm=cfPage.match(/(three|six|nine|twelve) months ended|(13|26|39|52) weeks ended|years? ended/i);
  const mm={three:3,six:6,nine:9,twelve:12,'13':3,'26':6,'39':9,'52':12};let cfM=cm?(cm[1]?mm[cm[1].toLowerCase()]:cm[2]?mm[cm[2]]:12):(quarterly?3:12);
  const dm=full.match(/(?:period|quarter|year|months|weeks) ended\s+([A-Z][a-z]+\.? \d{1,2},? \d{4})/i);const end=dm?new Date(dm[1]):null;
  const endS=end&&!isNaN(end)?end.toISOString().slice(0,10):'';
@@ -933,6 +937,33 @@ function starterBox(){const el=document.getElementById('starter-box');if(!el)ret
 
 /* ---------- companies packed into data/sec-data.js by the GitHub Action ---------- */
 let CUR_T=null;
+/* ---------- uploaded reports (data/reports/TICKER/, read by the GitHub Action) ---------- */
+const REPO=(()=>{const m=location.hostname.match(/^([^.]+)\.github\.io$/);const p=location.pathname.split('/').filter(Boolean)[0];return m&&p?m[1]+'/'+p:'rongyaogloria-web/stock-valuation';})();
+function repRows(t){const R=(window.REPORTS||{})[t];if(!R)return[];return R.reports.filter(r=>r.end&&r.quarter).map(r=>{const o={period:`${r.fp} FY${yy(r.fy)}`,_meta:{fy:r.fy,fp:r.fp,end:r.end,src:'report: '+r.file}};
+ XF.forEach(([k])=>{if(r.quarter[k]!=null)o[k]=Math.round(r.quarter[k]*10)/10;});return o;});}
+function mergeReports(t){const rows=repRows(t);if(!rows.length)return;const R=window.REPORTS[t];
+ const withRev=rows.filter(r=>r.revenue!=null);
+ if(S.periodType==='Annual'&&withRev.length>=4){S.history=rows.slice(-12);S.periodType='Quarterly';S._fromReports=true;}
+ else if(S.periodType==='Quarterly'){const H=S.history.slice();rows.forEach(r=>{const i=H.findIndex(h=>h._meta&&Math.abs(new Date(h._meta.end)-new Date(r._meta.end))<20*864e5);
+   if(i>=0){XF.forEach(([k])=>{if(H[i][k]==null&&r[k]!=null)H[i][k]=r[k];});}else H.push(r);});
+  S.history=H.sort((a,b)=>(a._meta?.end||'').localeCompare(b._meta?.end||'')).slice(-12);}
+ if(S.periodType==='Quarterly'){const rv=S.history.map(r=>num(r.revenue)).filter(v=>v!=null);if(rv.length>=4)S.company.ltmRevenue=Math.round(rv.slice(-4).reduce((a,b)=>a+b,0)*10)/10;}
+ const last=[...R.reports].filter(r=>r.end&&r.fields).sort((a,b)=>a.end.localeCompare(b.end)).at(-1);
+ if(last&&(!S._balE||last.end>S._balE)){const f=last.fields;if(f.cash)S.company.cash=Math.round((f.cash.v+(f.sti?.v||0))*10)/10;
+  if(f.debtLT||f.debtST)S.company.debt=Math.round(((f.debtLT?.v||0)+(f.debtST?.v||0))*10)/10;S._balE=last.end;S._balSrc='report '+last.file;}}
+function reapplyEdits(){const E=S._edited||{};Object.entries(E).forEach(([key,v])=>{const [per,k]=key.split('|');const r=S.history.find(r=>r.period===per);if(r)r[k]=v;});}
+function repBox(){const el=document.getElementById('rep-box');if(!el)return;const t=String(S.company.ticker||'').toUpperCase();if(!t||!(window.SEC_DATA||{})[t]){el.innerHTML='';return;}
+ const R=(window.REPORTS||{})[t];const foreign=S._cur&&S._cur!=='USD';const up=`https://github.com/${REPO}/upload/main/data/reports/${t}`;
+ if(!R&&!foreign){el.innerHTML='';return;}
+ const reps=R?R.reports:[];const f1=v=>v==null?'–':Number(v).toLocaleString(undefined,{maximumFractionDigits:1});
+ el.innerHTML=`<div class="starter"><b>Your uploaded reports for ${esc(t)}</b> ${reps.length?`(${reps.length}) – kept in your GitHub project and read automatically. Numbers below are single quarters in ${esc(R.reports.find(r=>r.currency)?.currency||S._cur||'')} millions; click a file to check against the original.`:`– none yet. ${foreign?'SEC data for foreign companies is yearly only. ':''}Upload each quarterly report (PDF) and the tool will switch to quarterly history.`}
+  ${reps.length?`<div class="tw" style="margin:8px 0;background:var(--card)"><table><tr><th>Period</th><th>Report file</th><th>Revenue</th><th>Op. income</th><th>Net income</th><th>Op. cash flow</th><th>Capex</th><th>Notes</th></tr>
+  ${reps.map(r=>`<tr><td>${r.fp?esc(r.fp+' FY'+yy(r.fy)):'–'}<br><span class="note">${esc(r.end||'?')}</span></td><td style="text-align:left"><a href="${esc(r.path)}" target="_blank" rel="noopener">${esc(r.file)}</a></td>
+   ${['revenue','opInc','gaapNI','ocf','capex'].map(k=>`<td title="${esc((r.fields?.[k]?`p.${r.fields[k].page}: ${r.fields[k].line}`:'not found')+(r.how?.[k]?' · '+r.how[k]:''))}">${f1(r.quarter?.[k])}${r.fields?.[k]&&r.quarter?.[k]==null?'<br><span class="note">ytd only</span>':''}</td>`).join('')}
+   <td class="note" style="text-align:left;white-space:normal;min-width:160px">${esc((r.warnings||[]).join('; ')||'')}${Object.entries(r.how||{}).filter(([k,h])=>/needs/.test(h)).map(([k,h])=>`${k}: ${h}`).join('; ')}</td></tr>`).join('')}</table></div>`:''}
+  <a class="btn" href="${up}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none">Upload a report for ${esc(t)} on GitHub</a>
+  <span class="note">PDF with selectable text (not a scan). Any order is fine; include every quarter so single quarters can be worked out. About 1–2 minutes after uploading, refresh this page. Hover a number to see the page and line it came from. If a number is wrong, correct it in the history table below – your correction is kept.</span></div>`;}
+
 /* ---------- categories: your own groups of tickers ----------
    Saved in this browser. "Download categories file" + upload to data/categories.json
    on GitHub makes them the default on every device. */
@@ -945,8 +976,8 @@ let CAT_OPEN=false;
 function pickCat(v){if(v==='__new'){CAT_OPEN=true;coBar();setTimeout(()=>document.getElementById('catnew')?.focus(),0);return;}
  if(v==='__manage'){CAT_OPEN=!CAT_OPEN;coBar();return;}
  CUR_CAT=v;try{localStorage.setItem(CATKEY+':sel',v)}catch(e){}coBar();}
-function catAdd(){const el=document.getElementById('catnew');const n=(el.value||'').trim();if(!n)return;const c=getCats();if(!c[n])c[n]=[];
- if(CUR_T&&!c[n].includes(CUR_T)&&document.getElementById('catwithcur')?.checked)c[n].push(CUR_T);setCats(c);CUR_CAT=n;try{localStorage.setItem(CATKEY+':sel',n)}catch(e){}coBar();}
+function catAdd(){const el=document.getElementById('catnew');const n=(el.value||'').trim();if(!n){el.focus();el.placeholder='Type a category name first';return;}const c=getCats();if(!c[n])c[n]=[];
+ document.querySelectorAll('#catpick input:checked').forEach(i=>{if(!c[n].includes(i.value))c[n].push(i.value);});setCats(c);CUR_CAT=n;try{localStorage.setItem(CATKEY+':sel',n)}catch(e){}coBar();}
 function catRename(o,n){n=(n||'').trim();const c=getCats();if(!n||n===o||c[n])return coBar();c[n]=c[o];delete c[o];setCats(c);if(CUR_CAT===o)CUR_CAT=n;coBar();}
 function catDel(n){const c=getCats();delete c[n];setCats(c);if(CUR_CAT===n)CUR_CAT='';coBar();}
 function catToggle(n,t,on){const c=getCats();c[n]=c[n]||[];if(on&&!c[n].includes(t))c[n].push(t);if(!on)c[n]=c[n].filter(x=>x!==t);setCats(c);coBar();}
@@ -972,8 +1003,11 @@ function coBar(){const el=document.getElementById('cobar');const D=window.SEC_DA
   <span class="note">data updated ${esc((window.SEC_BUILT||'').slice(0,10))}</span>`;
  if(CAT_OPEN){h+=`<div class="catpanel">
    <div class="catrow"><b>New category</b> <input id="catnew" placeholder="e.g. AI chips" onkeydown="if(event.key==='Enter')catAdd()">
-    ${CUR_T?`<label class="note"><input type="checkbox" id="catwithcur" checked> add ${CUR_T}</label>`:''}<button class="primary" onclick="catAdd()">Add</button>
+    <button class="primary" onclick="catAdd()">Add</button>
     <span style="flex:1"></span><button onclick="CAT_OPEN=false;coBar()">Done</button></div>
+   <div class="note" style="margin-top:8px">Tick the companies to put in the new category (as many as you like):</div>
+   <div class="chips" id="catpick">${all.map(t=>`<label class="chip ${t===CUR_T?'on':''}"><input type="checkbox" value="${t}" ${t===CUR_T?'checked':''} onchange="this.parentNode.classList.toggle('on',this.checked)">${t}</label>`).join('')}
+    <button style="font-size:12px;padding:3px 10px" onclick="document.querySelectorAll('#catpick input').forEach(i=>{i.checked=true;i.parentNode.classList.add('on')})">Select all</button></div>
    ${names.map(n=>`<div class="catbox"><div class="catrow"><input value="${esc(n)}" onchange="catRename(${esc(JSON.stringify(n))},this.value)" aria-label="Category name">
      <button onclick="if(confirm('Delete category “${esc(n)}”? The companies stay in your list.'))catDel(${esc(JSON.stringify(n))})">Delete</button></div>
      <div class="chips">${all.map(t=>`<label class="chip ${(cats[n]||[]).includes(t)?'on':''}"><input type="checkbox" ${(cats[n]||[]).includes(t)?'checked':''} onchange="catToggle(${esc(JSON.stringify(n))},'${t}',this.checked)">${t}</label>`).join('')}</div></div>`).join('')}
@@ -987,7 +1021,9 @@ function openTicker(t,keepLocal){const D=(window.SEC_DATA||{})[t];if(!D)return;
  S=Object.assign(blank(),JSON.parse(JSON.stringify(base)));S.company=Object.assign(blank().company,base.company||{});S.global=Object.assign(blank().global,base.global||{});S.scen=Object.assign(blank().scen,base.scen||{});
  const x=parseSEC(D,'SEC');x.ticker=t;x.updBal=true;
  x.mode='Quarterly';x.n=12;let rows=secRows(x);if(rows.length<4){x.mode='Annual';x.n=10;rows=secRows(x);}
- x._rows=rows;x._bal=secBal(x);applySec(x);
+ x._rows=rows;x._bal=secBal(x);applySec(x);S._balE=x._E||null;S._fromReports=false;
+ try{mergeReports(t);}catch(e){console.warn('reports',e);}
+ reapplyEdits();
  S._cur=x.cur;S._priceNote='';
  S._local=null;
  if(x.cur!=='USD'&&D.local_price&&D.local_price.currency===x.cur){const lp=D.local_price;S.company.price=lp.price;S.company.asOf=lp.date;S._local=lp;
