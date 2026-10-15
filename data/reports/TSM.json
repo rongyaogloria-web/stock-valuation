@@ -1,6 +1,555 @@
 {
  "ticker": "TSM",
- "extracted": "2026-10-15T00:38:47+00:00",
+ "extracted": "2026-10-15T00:40:40+00:00",
  "fiscalYearEnd": "2024-12-31",
- "reports": []
+ "reports": [
+  {
+   "file": "TSMC 3Q25 Management Report",
+   "path": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2025-10/90cb476be2e8406ba477c417a552d36d632db5c3/3Q25ManagementReport.pdf",
+   "source": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2025-10/90cb476be2e8406ba477c417a552d36d632db5c3/3Q25ManagementReport.pdf",
+   "end": "2024-09-30",
+   "fy": "2024",
+   "fp": "Q3",
+   "isM": 3,
+   "cfM": 3,
+   "currency": "TWD",
+   "unit": "billions",
+   "warnings": [],
+   "fixed": true,
+   "fields": {
+    "revenue": {
+     "v": 759690.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "opInc": {
+     "v": 360770.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "gaapNI": {
+     "v": 325260.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "ocf": {
+     "v": 391990.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "capex": {
+     "v": 207080.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "cash": {
+     "v": 2167600.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "debtLT": {
+     "v": 994970.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    }
+   },
+   "quarter": {
+    "revenue": 759690.0,
+    "opInc": 360770.0,
+    "gaapNI": 325260.0,
+    "ocf": 391990.0,
+    "capex": 207080.0
+   },
+   "how": {
+    "revenue": "quarter figure from official report",
+    "opInc": "quarter figure from official report",
+    "gaapNI": "quarter figure from official report",
+    "ocf": "quarter figure from official report",
+    "capex": "quarter figure from official report"
+   }
+  },
+  {
+   "file": "TSMC 4Q25 Management Report",
+   "path": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-01/00fe50f72b38d74e6b9b066398f020f337cd4e9d/4Q25%20Management%20Report.pdf",
+   "source": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-01/00fe50f72b38d74e6b9b066398f020f337cd4e9d/4Q25%20Management%20Report.pdf",
+   "end": "2024-12-31",
+   "fy": "2024",
+   "fp": "Q4",
+   "isM": 3,
+   "cfM": 3,
+   "currency": "TWD",
+   "unit": "billions",
+   "warnings": [],
+   "fixed": true,
+   "fields": {
+    "revenue": {
+     "v": 868460.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "opInc": {
+     "v": 425710.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "gaapNI": {
+     "v": 374680.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "ocf": {
+     "v": 620210.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "capex": {
+     "v": 361950.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "cash": {
+     "v": 2422020.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "debtLT": {
+     "v": 1018290.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    }
+   },
+   "quarter": {
+    "revenue": 868460.0,
+    "opInc": 425710.0,
+    "gaapNI": 374680.0,
+    "ocf": 620210.0,
+    "capex": 361950.0
+   },
+   "how": {
+    "revenue": "quarter figure from official report",
+    "opInc": "quarter figure from official report",
+    "gaapNI": "quarter figure from official report",
+    "ocf": "quarter figure from official report",
+    "capex": "quarter figure from official report"
+   }
+  },
+  {
+   "file": "TSMC 1Q26 Management Report",
+   "path": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-04/5508a9df8981f587c73dbfaf9f577f142e22bbb1/1Q26ManagementReport.pdf",
+   "source": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-04/5508a9df8981f587c73dbfaf9f577f142e22bbb1/1Q26ManagementReport.pdf",
+   "end": "2025-03-31",
+   "fy": "2025",
+   "fp": "Q1",
+   "isM": 3,
+   "cfM": 3,
+   "currency": "TWD",
+   "unit": "billions",
+   "warnings": [],
+   "fixed": true,
+   "fields": {
+    "revenue": {
+     "v": 839250.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "opInc": {
+     "v": 407080.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "gaapNI": {
+     "v": 361560.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "ocf": {
+     "v": 625570.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "capex": {
+     "v": 330830.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "cash": {
+     "v": 2703090.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "debtLT": {
+     "v": 1048760.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    }
+   },
+   "quarter": {
+    "revenue": 839250.0,
+    "opInc": 407080.0,
+    "gaapNI": 361560.0,
+    "ocf": 625570.0,
+    "capex": 330830.0
+   },
+   "how": {
+    "revenue": "quarter figure from official report",
+    "opInc": "quarter figure from official report",
+    "gaapNI": "quarter figure from official report",
+    "ocf": "quarter figure from official report",
+    "capex": "quarter figure from official report"
+   }
+  },
+  {
+   "file": "TSMC 3Q25 Management Report",
+   "path": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2025-10/90cb476be2e8406ba477c417a552d36d632db5c3/3Q25ManagementReport.pdf",
+   "source": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2025-10/90cb476be2e8406ba477c417a552d36d632db5c3/3Q25ManagementReport.pdf",
+   "end": "2025-06-30",
+   "fy": "2025",
+   "fp": "Q2",
+   "isM": 3,
+   "cfM": 3,
+   "currency": "TWD",
+   "unit": "billions",
+   "warnings": [],
+   "fixed": true,
+   "fields": {
+    "revenue": {
+     "v": 933790.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "opInc": {
+     "v": 463420.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "gaapNI": {
+     "v": 398270.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "ocf": {
+     "v": 497070.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "capex": {
+     "v": 297220.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "cash": {
+     "v": 2634430.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "debtLT": {
+     "v": 977890.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    }
+   },
+   "quarter": {
+    "revenue": 933790.0,
+    "opInc": 463420.0,
+    "gaapNI": 398270.0,
+    "ocf": 497070.0,
+    "capex": 297220.0
+   },
+   "how": {
+    "revenue": "quarter figure from official report",
+    "opInc": "quarter figure from official report",
+    "gaapNI": "quarter figure from official report",
+    "ocf": "quarter figure from official report",
+    "capex": "quarter figure from official report"
+   }
+  },
+  {
+   "file": "TSMC 3Q25 Management Report",
+   "path": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2025-10/90cb476be2e8406ba477c417a552d36d632db5c3/3Q25ManagementReport.pdf",
+   "source": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2025-10/90cb476be2e8406ba477c417a552d36d632db5c3/3Q25ManagementReport.pdf",
+   "end": "2025-09-30",
+   "fy": "2025",
+   "fp": "Q3",
+   "isM": 3,
+   "cfM": 3,
+   "currency": "TWD",
+   "unit": "billions",
+   "warnings": [],
+   "fixed": true,
+   "fields": {
+    "revenue": {
+     "v": 989920.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "opInc": {
+     "v": 500690.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "gaapNI": {
+     "v": 452300.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "ocf": {
+     "v": 426830.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "capex": {
+     "v": 287450.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "shares": {
+     "v": 25930.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "cash": {
+     "v": 2751060.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    },
+    "debtLT": {
+     "v": 994450.0,
+     "page": null,
+     "line": "TSMC 3Q25 Management Report"
+    }
+   },
+   "quarter": {
+    "revenue": 989920.0,
+    "opInc": 500690.0,
+    "gaapNI": 452300.0,
+    "ocf": 426830.0,
+    "capex": 287450.0,
+    "shares": 25930.0
+   },
+   "how": {
+    "revenue": "quarter figure from official report",
+    "opInc": "quarter figure from official report",
+    "gaapNI": "quarter figure from official report",
+    "ocf": "quarter figure from official report",
+    "capex": "quarter figure from official report",
+    "shares": "quarter figure from official report"
+   }
+  },
+  {
+   "file": "TSMC 4Q25 Management Report",
+   "path": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-01/00fe50f72b38d74e6b9b066398f020f337cd4e9d/4Q25%20Management%20Report.pdf",
+   "source": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-01/00fe50f72b38d74e6b9b066398f020f337cd4e9d/4Q25%20Management%20Report.pdf",
+   "end": "2025-12-31",
+   "fy": "2025",
+   "fp": "Q4",
+   "isM": 3,
+   "cfM": 3,
+   "currency": "TWD",
+   "unit": "billions",
+   "warnings": [],
+   "fixed": true,
+   "fields": {
+    "revenue": {
+     "v": 1046090.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "opInc": {
+     "v": 564900.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "gaapNI": {
+     "v": 505740.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "ocf": {
+     "v": 725510.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "capex": {
+     "v": 356910.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "shares": {
+     "v": 25931.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "cash": {
+     "v": 3068590.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    },
+    "debtLT": {
+     "v": 1032990.0,
+     "page": null,
+     "line": "TSMC 4Q25 Management Report"
+    }
+   },
+   "quarter": {
+    "revenue": 1046090.0,
+    "opInc": 564900.0,
+    "gaapNI": 505740.0,
+    "ocf": 725510.0,
+    "capex": 356910.0,
+    "shares": 25931.0
+   },
+   "how": {
+    "revenue": "quarter figure from official report",
+    "opInc": "quarter figure from official report",
+    "gaapNI": "quarter figure from official report",
+    "ocf": "quarter figure from official report",
+    "capex": "quarter figure from official report",
+    "shares": "quarter figure from official report"
+   }
+  },
+  {
+   "file": "TSMC 1Q26 Management Report",
+   "path": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-04/5508a9df8981f587c73dbfaf9f577f142e22bbb1/1Q26ManagementReport.pdf",
+   "source": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-04/5508a9df8981f587c73dbfaf9f577f142e22bbb1/1Q26ManagementReport.pdf",
+   "end": "2026-03-31",
+   "fy": "2026",
+   "fp": "Q1",
+   "isM": 3,
+   "cfM": 3,
+   "currency": "TWD",
+   "unit": "billions",
+   "warnings": [],
+   "fixed": true,
+   "fields": {
+    "revenue": {
+     "v": 1134100.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "opInc": {
+     "v": 658970.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "gaapNI": {
+     "v": 572480.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "ocf": {
+     "v": 698970.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "capex": {
+     "v": 350760.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "shares": {
+     "v": 25931.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "cash": {
+     "v": 3383600.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    },
+    "debtLT": {
+     "v": 1057260.0,
+     "page": null,
+     "line": "TSMC 1Q26 Management Report"
+    }
+   },
+   "quarter": {
+    "revenue": 1134100.0,
+    "opInc": 658970.0,
+    "gaapNI": 572480.0,
+    "ocf": 698970.0,
+    "capex": 350760.0,
+    "shares": 25931.0
+   },
+   "how": {
+    "revenue": "quarter figure from official report",
+    "opInc": "quarter figure from official report",
+    "gaapNI": "quarter figure from official report",
+    "ocf": "quarter figure from official report",
+    "capex": "quarter figure from official report",
+    "shares": "quarter figure from official report"
+   }
+  },
+  {
+   "file": "TSMC 2Q26 Management Report",
+   "path": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-07/6f49632674bd2d0fd48cb65aaf89ec6ab510b559/2Q26%20ManagementReport.pdf",
+   "source": "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-07/6f49632674bd2d0fd48cb65aaf89ec6ab510b559/2Q26%20ManagementReport.pdf",
+   "end": "2026-06-30",
+   "fy": "2026",
+   "fp": "Q2",
+   "isM": 3,
+   "cfM": 3,
+   "currency": "TWD",
+   "unit": "billions",
+   "warnings": [],
+   "fixed": true,
+   "fields": {
+    "revenue": {
+     "v": 1270380.0,
+     "page": null,
+     "line": "TSMC 2Q26 Management Report"
+    },
+    "opInc": {
+     "v": 766600.0,
+     "page": null,
+     "line": "TSMC 2Q26 Management Report"
+    },
+    "gaapNI": {
+     "v": 706560.0,
+     "page": null,
+     "line": "TSMC 2Q26 Management Report"
+    },
+    "ocf": {
+     "v": 783360.0,
+     "page": null,
+     "line": "TSMC 2Q26 Management Report"
+    },
+    "capex": {
+     "v": 496000.0,
+     "page": null,
+     "line": "TSMC 2Q26 Management Report"
+    },
+    "shares": {
+     "v": 25932.0,
+     "page": null,
+     "line": "TSMC 2Q26 Management Report"
+    },
+    "cash": {
+     "v": 3518010.0,
+     "page": null,
+     "line": "TSMC 2Q26 Management Report"
+    },
+    "debtLT": {
+     "v": 1031680.0,
+     "page": null,
+     "line": "TSMC 2Q26 Management Report"
+    }
+   },
+   "quarter": {
+    "revenue": 1270380.0,
+    "opInc": 766600.0,
+    "gaapNI": 706560.0,
+    "ocf": 783360.0,
+    "capex": 496000.0,
+    "shares": 25932.0
+   },
+   "how": {
+    "revenue": "quarter figure from official report",
+    "opInc": "quarter figure from official report",
+    "gaapNI": "quarter figure from official report",
+    "ocf": "quarter figure from official report",
+    "capex": "quarter figure from official report",
+    "shares": "quarter figure from official report"
+   }
+  }
+ ]
 }

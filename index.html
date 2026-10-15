@@ -857,8 +857,9 @@ function autoAnswers(D,force){const F=companyFacts(D),{x,A}=F;const why=S._why=O
  const po=instList(x,['us-gaap:UnrecordedUnconditionalPurchaseObligationBalanceSheetAmount','us-gaap:PurchaseObligation']).at(-1);
  if(po&&A.length){const r=po.val/1e6/A.at(-1).revenue;flag('commit',r>0.5,`purchase commitments ${fM(po.val/1e6)} = ${fP(r)} of a year's sales`);}else flag('commit',false,'no purchase-commitment figure tagged in SEC data – see commitments note');
  // adjusted net income from reported adjusted EPS
- (C.epsHistory||[]).forEach(e=>{const r=S.history.find(r=>r._meta&&Math.abs(new Date(r._meta.end)-new Date(e.quarter))<25*864e5);if(r&&num(r.adjNI)==null&&num(r.shares)){r.adjNI=Math.round(e.epsActual*r.shares*10)/10;}});
- if((C.epsHistory||[]).length)why.adj=`adjusted net income = Yahoo "actual" EPS × diluted shares (usually the company's adjusted figure, sometimes the official one)`;
+ const usdOK=(x.cur||'USD')==='USD';
+ (usdOK?C.epsHistory||[]:[]).forEach(e=>{const r=S.history.find(r=>r._meta&&Math.abs(new Date(r._meta.end)-new Date(e.quarter))<25*864e5);if(r&&num(r.adjNI)==null&&num(r.shares)){r.adjNI=Math.round(e.epsActual*r.shares*10)/10;}});
+ if(usdOK&&(C.epsHistory||[]).length)why.adj=`adjusted net income = Yahoo "actual" EPS × diluted shares (usually the company's adjusted figure, sometimes the official one)`;
  // thesis-breakers
  if(force||!S.breakers){const H=S.history.filter(r=>num(r.revenue)),q=S.periodType==='Quarterly',L=H.at(-1),P=q?H.at(-5):H.at(-2);const yoy=L&&P?L.revenue/P.revenue-1:null;
   const avgM=om.length?om.reduce((a,b)=>a+b,0)/om.length:null;const sbc=L&&num(L.sbc)!=null?L.sbc/L.revenue:null;const lines=[];

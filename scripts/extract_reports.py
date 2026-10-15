@@ -219,6 +219,11 @@ def single_quarters(reps):
             by_fy.setdefault(r["fy"], []).append(r)
     for r in reps:
         r["quarter"], r["how"] = {}, {}
+        if r.get("fixed"):
+            for k, f in r["fields"].items():
+                if KIND[k] != "bs":
+                    r["quarter"][k], r["how"][k] = f["v"], "quarter figure from official report"
+            continue
         for k, f in r["fields"].items():
             if KIND[k] == "bs":
                 continue
@@ -280,6 +285,25 @@ def main():
                 if r["isM"] == 12 and r["cfM"] == 12:
                     r["fp"] = "Q4"
             reps.append(r)
+        # figures typed from official reports (data/reports/TICKER/_figures.json)
+        fp_ = os.path.join(folder, "_figures.json")
+        if os.path.exists(fp_):
+            F = json.load(open(fp_))
+            mult = {"thousands": 1e-3, "millions": 1.0, "billions": 1e3}.get(F.get("unit", "millions"), 1.0)
+            have = {r.get("end") for r in reps}
+            for q in F.get("quarters", []):
+                if q["end"] in have:
+                    continue  # a PDF of the same quarter takes priority
+                vals = {k: round(q[k] * mult, 3) for k in ("revenue", "opInc", "gaapNI", "ocf", "capex", "shares") if q.get(k) is not None}
+                if "capex" in vals:
+                    vals["capex"] = abs(vals["capex"])
+                bal = {k: {"v": round(q[k] * mult, 3), "page": None, "line": q.get("source_name", "")} for k in ("cash",) if q.get(k) is not None}
+                if q.get("debt") is not None:
+                    bal["debtLT"] = {"v": round(abs(q["debt"]) * mult, 3), "page": None, "line": q.get("source_name", "")}
+                reps.append({"file": q.get("source_name", "official figures"), "path": q.get("source", ""), "source": q.get("source"),
+                             "end": q["end"], "fy": str(q["fy"]), "fp": q["fp"], "isM": 3, "cfM": 3, "currency": F.get("currency"),
+                             "unit": F.get("unit"), "warnings": [], "fixed": True,
+                             "fields": {**{k: {"v": v, "page": None, "line": q.get("source_name", "")} for k, v in vals.items()}, **bal}})
         good = sorted([r for r in reps if r.get("end")], key=lambda r: r["end"])
         single_quarters(good)
         out = {"ticker": tk, "extracted": datetime.now(timezone.utc).isoformat(timespec="seconds"), "fiscalYearEnd": fye,
