@@ -1,0 +1,9 @@
+{
+  "_help": "Companies whose quarterly reports are downloaded automatically from their official investor website. page: the quarterly-results page ({year} and {q} are filled in). file: the document's file name on that page. from: first quarter to collect.",
+  "TSM": {
+    "name": "TSMC - official investor relations site",
+    "page": "https://investor.tsmc.com/english/quarterly-results/{year}/q{q}",
+    "file": "FS.pdf",
+    "from": "2025Q1"
+  }
+}

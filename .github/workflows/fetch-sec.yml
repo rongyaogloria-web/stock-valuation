@@ -20,11 +20,13 @@ on:
       - "data/workbooks/**"
       - "data/categories.json"
       - "data/reports/**"
+      - "data/report_sources.json"
+      - "scripts/fetch_ir_reports.py"
       - "scripts/extract_reports.py"
       - "scripts/fetch_sec.py"
       - ".github/workflows/fetch-sec.yml"
   schedule:
-    - cron: "17 1 * * 1"   # Mondays 01:17 UTC
+    - cron: "17 1 * * *"   # every day 01:17 UTC (catches new results within a day)
 
 permissions:
   contents: write
@@ -39,6 +41,9 @@ jobs:
           python-version: "3.12"
       - name: Install helper for analyst forecasts
         run: pip install --quiet yfinance pdfplumber
+      - name: Download reports from official investor websites (data/report_sources.json)
+        continue-on-error: true
+        run: python scripts/fetch_ir_reports.py
       - name: Read uploaded quarterly reports (data/reports/TICKER/)
         continue-on-error: true   # a bad PDF must not stop the SEC update
         run: python scripts/extract_reports.py
@@ -52,6 +57,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
-          git add data/sec data/sec-data.js data/reports
+          git add data/sec data/sec-data.js data/reports data/report_sources.json
           git diff --cached --quiet || git commit -m "SEC data update $(date -u +%Y-%m-%d)"
           git push

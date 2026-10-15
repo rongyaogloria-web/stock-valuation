@@ -260,9 +260,11 @@ def main():
             continue
         tk = t.upper()
         fye = sec_fye(tk)
+        sp = os.path.join(folder, "_sources.json")
+        srcs = json.load(open(sp)) if os.path.exists(sp) else {}
         reps = []
         for fn in sorted(os.listdir(folder)):
-            if fn.lower().startswith("readme") or not fn.lower().endswith((".pdf", ".htm", ".html", ".xhtml", ".txt")):
+            if fn.lower().startswith(("readme", "_")) or not fn.lower().endswith((".pdf", ".htm", ".html", ".xhtml", ".txt")):
                 continue
             try:
                 r = extract(os.path.join(folder, fn))
@@ -271,6 +273,8 @@ def main():
                 reps.append({"file": fn, "path": f"data/reports/{t}/{fn}", "error": str(e), "fields": {}, "warnings": [str(e)]})
                 continue
             r["file"], r["path"] = fn, f"data/reports/{t}/{fn}"
+            if fn in srcs:
+                r["source"] = srcs[fn].get("url")
             if r["end"]:
                 r["fy"], r["fp"] = fiscal_label(r["end"], fye)
                 if r["isM"] == 12 and r["cfM"] == 12:
