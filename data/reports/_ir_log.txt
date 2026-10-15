@@ -2,8 +2,10 @@ Run 2026-10-15
 ir: TSM 2025Q1: page not available (HTTP Error 403: Forbidden)
 ir: TSM 2025Q2: page not available (HTTP Error 403: Forbidden)
 ir: TSM 2025Q3: page not available (HTTP Error 403: Forbidden)
-ir: TSM 2025Q4: page not available (HTTP Error 403: Forbidden)
+ir: TSM 2025Q4: page 205464 chars, 7 PDF links: NYSE_Section_303A.pdf, NYSE_Section_303A.pdf, FS.pdf, 4Q25 Presentation (E).pdf, 4Q25 Management Report.pdf, 4Q25EarningsRelease.pdf, TSMC 4Q25 Transcript.pdf
+ir: TSM 2025Q4: saved data/reports/TSM/2025-Q4-fs.pdf (123 KB)
 ir: TSM 2026Q1: page not available (HTTP Error 403: Forbidden)
-ir: TSM 2026Q2: page not available (HTTP Error 403: Forbidden)
+ir: TSM 2026Q2: page 205219 chars, 7 PDF links: NYSE_Section_303A.pdf, NYSE_Section_303A.pdf, FS.pdf, 2Q26 Presentation (E).pdf, 2Q26 ManagementReport.pdf, 2Q26 EarningsRelease.pdf, TSMC 2Q26 Transcript.pdf
+ir: TSM 2026Q2: download failed (HTTP Error 403: Forbidden)
 ir: TSM 2026Q3: page not available (HTTP Error 403: Forbidden)
 ir: TSM 2026Q4: page not available (HTTP Error 403: Forbidden)
