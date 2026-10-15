@@ -42,6 +42,10 @@ Direct link to one company: `https://rongyaogloria-web.github.io/stock-valuation
 
 The data refreshes **every Monday**, and whenever you edit `data/watchlist.txt` or upload a workbook. You can also refresh now: **Actions → Fetch SEC data → Run workflow**.
 
+**Categories:** use the **Category** dropdown to group companies (e.g. "AI chips", "Big tech"). Choose **+ New category…**, type a name, click **Add**, then tick the companies that belong in it. **✎ Manage categories…** renames, deletes or changes them. They are saved in your browser; to have them on every device, click **Download categories file** and upload it to the `data` folder on GitHub as `categories.json`.
+
+**P/E or P/S:** step 5 values the company when you "sell" it at the end. Profitable companies are valued on profit (**P/E** × final-year profit per share). Loss-making companies are switched automatically to sales (**P/S** × final-year sales per share). The box *Selling multiple based on* says which one is used and why, and you can override it.
+
 **Add or remove companies:** edit `data/watchlist.txt` on GitHub (pencil icon → one ticker per line → Commit). About a minute later the new button appears on the web page (refresh the page).
 
 **Keep your valuation assumptions:** your edits are remembered in your browser automatically. To keep them permanently (and on every device), click **Save file**, rename the download to `TICKER.json` (e.g. `MU.json`), and upload it to the **`data/workbooks/`** folder on GitHub (Add file → Upload files → Commit). Next time you click that company, your assumptions load together with the fresh SEC numbers.

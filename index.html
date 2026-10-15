@@ -103,6 +103,15 @@ svg text{fill:var(--ink2);font-size:12px}
 .cobar{max-width:1080px;margin:0 auto;padding:0 16px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--ink2)}
 .cobar:empty{display:none}
 .cobar .cosel{font:inherit;font-size:13px;font-weight:600;padding:6px 32px 6px 12px;border-radius:8px;border:1px solid var(--accent);background:var(--card);color:var(--ink);cursor:pointer;min-width:240px;max-width:100%}
+.cobar .cosel.cat{min-width:180px}
+.catpanel{flex-basis:100%;border:1px solid var(--line2);border-radius:12px;padding:12px;margin-top:6px;background:var(--card)}
+.catrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.catrow input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--ink)}
+.catbox{border-top:1px solid var(--line);padding:10px 0 4px;margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 10px;border:1px solid var(--line2);border-radius:999px;cursor:pointer}
+.chip.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.chip input{margin:0}
 .cobar .cosel:focus{outline:2px solid var(--accent);outline-offset:1px}
 .why{display:block;font-size:12px;margin-top:3px;color:var(--accent)}
 .why:empty{display:none}
@@ -215,7 +224,7 @@ footer{max-width:1080px;margin:0 auto;padding:10px 16px 40px;color:var(--muted);
   <div class="tw"><table id="path-table"></table></div>
 
   <h3>Sensitivity – base case value per share</h3>
-  <p class="note">Rows: final-year revenue. Columns: selling P/E. Green = today's price is below that value by at least your margin of safety; amber = value above price but buffer too thin; red = value below today's price.</p>
+  <p class="note" id="sens-note"></p><p class="note">Green = today's price is below that value by at least your margin of safety; amber = value above price but buffer too thin; red = value below today's price.</p>
   <div class="tw"><table class="sens" id="sens"></table></div>
 </section>
 
@@ -254,6 +263,7 @@ const GLOBAL=[
  {k:'t0',l:'Years until first forecast year ends',u:'yrs',h:'e.g. 1.3 if the first forecast fiscal year ends ~16 months from today; 1 if ~12 months.',req:1},
  {k:'firstYearLabel',l:'Name of first forecast year',t:'text',h:'e.g. FY28 or 2027. Later years count up automatically.'},
  {k:'valShares',l:'Shares to divide by (future)',u:'M',h:'Diluted shares, rounded up for dilution you expect (acquisitions, converts).',req:1},
+ {k:'method',l:'Selling multiple based on',t:'select',opts:[['Auto','Auto (P/S if loss-making, else P/E)'],['P/E','Profit – P/E'],['P/S','Sales – P/S']],h:'P/E values the final year\'s profit; P/S values its sales. Use P/S for companies that do not make a profit yet.'},
  {k:'mos',l:'Margin of safety you want',u:'%',h:'How far below value you want to buy. 20–30% common; more for less certain businesses.',req:1},
 ];
 const SCEN_F=[
@@ -323,7 +333,7 @@ function blank(){return{
  business:'',moat:{},periodType:'Annual',
  history:Array.from({length:5},()=>({period:''})),
  flags:{},
- global:{disc:10,tax:15,netInt:0,cashConv:95,years:5,t0:1,firstYearLabel:'Year 1',valShares:null,mos:25},
+ global:{disc:10,tax:15,netInt:0,cashConv:95,years:5,t0:1,firstYearLabel:'Year 1',valShares:null,mos:25,method:'Auto'},
  scen:{bear:{prob:25},base:{prob:50},bull:{prob:25}},
  breakers:'',notes:''};}
 
@@ -337,6 +347,7 @@ function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt
 
 /* ---------- rendering of inputs ---------- */
 function field(path,d){const v=getP(path);const isT=d.t==='text'||d.t==='date';
+ if(d.t==='select')return `<label class="f" data-f="${path}"><span class="fl">${d.l}</span><div class="in"><select data-path="${path}" data-num="0">${d.opts.map(([o,l])=>`<option value="${o}" ${(v||'Auto')===o?'selected':''}>${l}</option>`).join('')}</select></div>${d.h?`<small>${d.h}</small>`:''}</label>`;
  return `<label class="f" data-f="${path}"><span class="fl">${d.l}${d.req?'<span class="req">*</span>':''}</span>
  <div class="in"><input data-path="${path}" data-num="${isT?0:1}" type="${d.t||'number'}" step="any" value="${esc(v??'')}">${d.u?`<span class="u">${d.u}</span>`:''}</div>
  ${d.h?`<small>${d.h}</small>`:''}</label>`}
@@ -374,17 +385,26 @@ const fX=v=>v==null||!isFinite(v)?'–':v.toFixed(1)+'x';
 /* ---------- the valuation model ---------- */
 function yearLabels(n){const s=S.global.firstYearLabel||'Year 1';const m=String(s).match(/^(.*?)(\d+)$/);
  return Array.from({length:n},(_,i)=>m?m[1]+String(+m[2]+i).padStart(m[2].length,'0'):'Y'+(i+1));}
-function model(sc,ov={}){const g=S.global,c=S.company;
+function ltmOpInc(){const H=S.history.filter(r=>num(r.revenue)!=null&&num(r.opInc)!=null);if(!H.length)return null;
+ return S.periodType==='Quarterly'?(H.length>=4?H.slice(-4).reduce((a,r)=>a+num(r.opInc),0):null):num(H.at(-1).opInc);}
+function valMethod(){const m=S.global.method||'Auto';if(m!=='Auto')return{m,why:'chosen by you'};
+ const op=ltmOpInc();if(op!=null&&op<=0)return{m:'P/S',why:`the company lost money over the last 12 months (operating loss ${fM(op)})`};
+ if(num(S.scen?.base?.mN)!=null&&num(S.scen.base.mN)<=0)return{m:'P/S',why:'your base case has no profit in the final year'};
+ return{m:'P/E',why:op!=null?`the company is profitable (last-12-month operating profit ${fM(op)})`:'default'};}
+function model(sc,ov={}){const g=S.global,c=S.company;const PS=(ov.method||valMethod().m)==='P/S';
  const r1=num(ov.rev1??sc.rev1),rN=num(ov.revN??sc.revN),m1=num(sc.m1),mN=num(sc.mN),ex=num(ov.exit??sc.exit);
  const N=Math.max(1,Math.round(num(g.years)||5)),t0=num(g.t0)??1,d=(ov.disc??num(g.disc))/100,tax=(num(g.tax)??0)/100,
   ni=num(g.netInt)??0,cc=(num(g.cashConv)??100)/100,sh=num(g.valShares)||num(c.shares);
  if([r1,rN,m1,mN,ex,sh].some(x=>x==null)||isNaN(d)||r1<=0||rN<=0)return null;
  const gr=N>1?Math.pow(rN/r1,1/(N-1)):1;let v=0;const rows=[];
  for(let i=0;i<N;i++){const rev=r1*Math.pow(gr,i),m=(N>1?m1+(mN-m1)*i/(N-1):mN)/100,
-  oe=rev*m*(1-tax)-ni,eps=oe/sh,t=t0+i,df=Math.pow(1+d,t),pvc=eps*cc/df;v+=pvc;
-  const sale=i===N-1?eps*ex:0,pvs=sale/df;v+=pvs;rows.push({rev,m,oe,eps,t,cash:eps*cc,pvc,sale,pvs});}
+  pre=rev*m-ni,oe=pre>0?pre*(1-tax):pre,eps=oe/sh,t=t0+i,df=Math.pow(1+d,t),
+  cash=eps>0?eps*cc:eps,pvc=cash/df;v+=pvc;
+  const last=i===N-1,sale=last?(PS?rev/sh*ex:Math.max(0,eps)*ex):0,pvs=sale/df;v+=pvs;
+  rows.push({rev,m,oe,eps,sps:rev/sh,t,cash,pvc,sale,pvs});}
  const nd=((num(c.debt)??0)+(num(c.otherLiab)??0)-(num(c.cash)??0))/sh;v-=nd;
- return{value:v,rows,nd,growth:gr-1,N};}
+ const raw=v;const lossExit=!PS&&rows.at(-1).eps<=0;
+ return{value:Math.max(0,v),raw,rows,nd,growth:gr-1,N,PS,lossExit};}
 function solve(f,lo,hi,it=80){let a=f(lo),b=f(hi);if(a==null||b==null||a*b>0)return null;
  for(let i=0;i<it;i++){const mid=(lo+hi)/2,m=f(mid);if(m==null)return null;if(a*m<=0){hi=mid;b=m}else{lo=mid;a=m}}return(lo+hi)/2;}
 function irr(sc,price){return solve(r=>{const o=model(sc,{disc:r*100});return o?o.value-price:null},-0.9,3);}
@@ -453,6 +473,9 @@ function recalc(){
 
  starterBox();
  document.querySelectorAll('[data-why]').forEach(el=>{const w=(S._why||{})[el.dataset.why];el.textContent=w?'Auto: '+w:'';});
+ const VM=valMethod();document.querySelectorAll('[data-f$=".exit"]').forEach(el=>{const fl=el.querySelector('.fl');if(fl)fl.innerHTML=`Selling ${VM.m} at the end<span class="req">*</span>`;
+  const sm=el.querySelector('small');if(sm)sm.textContent=VM.m==='P/S'?'Price ÷ sales per share a buyer would pay then. Mature software 4–8x, hardware 1–3x, retail <1x.':'Price ÷ profit per share a buyer would pay then. Mature good business 15–25x.';});
+ const mfl=document.querySelector('[data-f="global.method"] small');if(mfl)mfl.innerHTML=`Now using <b>${VM.m}</b> because ${esc(VM.why)}. P/E values the final year's profit; P/S values its sales.`;
  // valuation
  const res={};SCN.forEach(([k])=>res[k]=model(S.scen[k]||{}));
  const ok=SCN.every(([k])=>res[k]);const g=S.global,mos=(num(g.mos)??25)/100;
@@ -462,11 +485,12 @@ function recalc(){
   return`<div class="card"><div class="k"><span class="dot" style="background:${col}"></span> ${n.split(' –')[0]} (${num(S.scen[k]?.prob)??'–'}%)</div><div class="v">${r?f$(r.value):'–'}</div><div class="s">${r&&price?`${fP(r.value/price-1)} vs price · return ${ir==null?'–':fP(ir,1)}/yr`:'fill inputs'}</div></div>`}).join('')+
   `<div class="card"><div class="k">Probability-weighted</div><div class="v">${f$(wv)}</div><div class="s">${wv&&price?fP(wv/price-1)+' vs price':''}</div></div>`;
  drawBars(res,wv,price,mos);
+ const le=SCN.filter(([k])=>res[k]&&res[k].lossExit).map(([k])=>k);document.getElementById('val-legend').innerHTML+=le.length?`<br><span class="warn">The ${le.join(' and ')} case ends with a loss, so a P/E sale is worth $0. Switch “Selling multiple based on” to P/S for loss-making companies.</span>`:'';
  // reverse DCF
  const rd=document.getElementById('rdcf');
  if(base&&price){const iv=solve(x=>{const o=model(S.scen.base,{revN:x});return o?o.value-price:null},1,num(S.scen.base.rev1)*200);
   const yrs=(num(g.t0)??1)+base.N-1;const L=num(c.ltmRevenue);const lab=yearLabels(base.N).at(-1);
-  rd.innerHTML=iv==null?'Could not solve – check inputs.':`To be worth exactly today's ${f$(price)} with your base-case margins and a ${num(S.scen.base.exit)}x selling P/E, revenue must reach about <b>${fM(iv)}</b> in ${lab}. `+
+  rd.innerHTML=iv==null?'Could not solve – check inputs.':`To be worth exactly today's ${f$(price)} with your base-case margins and a ${num(S.scen.base.exit)}x selling ${base.PS?'P/S (on final-year sales)':'P/E (on final-year profit)'}, revenue must reach about <b>${fM(iv)}</b> in ${lab}. `+
    (L?`That is about <b>${fP(Math.pow(iv/L,1/yrs)-1)} a year</b> growth from today's ${fM(L)} for ${yrs.toFixed(1)} years. `:'')+
    `Your base case assumes ${fM(num(S.scen.base.revN))}. ${iv>num(S.scen.base.revN)?'<span class="bad">The market expects more than your base case.</span>':'<span class="good">The market expects less than your base case.</span>'} Ask yourself: is that growth realistic?`;
  }else rd.textContent='Fill in the base case and share price.';
@@ -474,9 +498,15 @@ function recalc(){
  drawPath(base);
  // sensitivity
  const st=document.getElementById('sens');
- if(base&&price){const ex=num(S.scen.base.exit),rv=num(S.scen.base.revN);const exs=[-8,-4,0,4,8].map(d=>Math.max(4,ex+d)),rvs=[.6,.8,1,1.2,1.4].map(f=>rv*f);
-  st.innerHTML=`<tr><th>Final revenue ↓ / P/E →</th>${exs.map(x=>`<th style="text-align:center">${x}x</th>`).join('')}</tr>`+rvs.map(r=>`<tr><td>${fM(r)}</td>${exs.map(x=>{const v=model(S.scen.base,{revN:r,exit:x}).value;
-   const cls=price<=v*(1-mos)?'c-good':v<price?'c-bad':'c-mid';return`<td class="${cls}">${f$(v)}</td>`}).join('')}</tr>`).join('');}
+ if(base&&price){const ex=num(S.scen.base.exit),rv=num(S.scen.base.revN),PS=base.PS;
+  const exs=PS?[0.5,0.75,1,1.25,1.5].map(f=>Math.round(ex*f*10)/10):[-8,-4,0,4,8].map(d=>Math.max(4,ex+d)),rvs=[.6,.8,1,1.2,1.4].map(f=>rv*f);
+  const lab=yearLabels(base.N).at(-1);
+  document.getElementById('sens-note').innerHTML=PS?`Each cell = value per share today if ${lab} <b>sales</b> are the row amount and a buyer then pays the column <b>P/S</b> (price ÷ sales per share). Margins stay as in your base case (they set the cash burned or earned along the way).`
+   :`Each cell = value per share today if ${lab} <b>sales</b> are the row amount. Sales are first turned into <b>profit</b> (× your base-case owner margin, − interest, − tax); a buyer then pays the column <b>P/E</b> on that profit. The second column shows the profit per share that the P/E is applied to.`;
+  st.innerHTML=`<tr><th>${lab} sales</th><th>${PS?'Sales / share':'Profit / share'}</th>${exs.map(x=>`<th style="text-align:center">${x}x ${PS?'P/S':'P/E'}</th>`).join('')}</tr>`+
+   rvs.map(r=>{const o=model(S.scen.base,{revN:r});const per=PS?o.rows.at(-1).sps:o.rows.at(-1).eps;
+    return`<tr><td>${fM(r)}</td><td>${f$(per,2)}</td>${exs.map(x=>{const v=model(S.scen.base,{revN:r,exit:x}).value;
+    const cls=price<=v*(1-mos)?'c-good':v<price?'c-bad':'c-mid';return`<td class="${cls}">${f$(v)}</td>`}).join('')}</tr>`}).join('');}
  else st.innerHTML='<tr><td>Fill in the base case and price.</td></tr>';
  // decision
  const buy=base?base.value*(1-mos):null,buyW=wv?wv*(1-mos):null;
@@ -515,11 +545,11 @@ function drawPath(base){const el=document.getElementById('path-chart'),tb=docume
  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Base case yearly owner cash per share and final sale value"><line x1="0" x2="${W}" y1="${base0}" y2="${base0}" stroke="var(--line2)"/>`;
  r.forEach((x,i)=>{const cx=10+slot*i+slot/2,y=sy(x.cash);s+=`<rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${base0-y}" rx="3" fill="var(--teal)"/><text x="${cx}" y="${y-6}" text-anchor="middle">${f$(x.cash,2)}</text><text x="${cx}" y="${H-20}" text-anchor="middle">${L[i]}</text>`;});
  const cx=10+slot*base.N+slot/2,y=sy(sale);s+=`<rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${base0-y}" rx="3" fill="var(--coral)"/><text x="${cx}" y="${y-6}" text-anchor="middle">${f$(sale)}</text><text x="${cx}" y="${H-20}" text-anchor="middle">Sell</text></svg>`;
- el.innerHTML=s+`<div class="note"><span class="dot" style="background:var(--teal)"></span> Cash you collect per share each year &nbsp; <span class="dot" style="background:var(--coral)"></span> Sale at ${num(S.scen.base.exit)}x final-year earnings. All of it shrunk back to today, minus net debt per share (${f$(base.nd,2)}), = <b>${f$(base.value)}</b>.</div>`;
- tb.innerHTML=`<tr><th>Year</th><th>Revenue</th><th>Owner margin</th><th>Owner earnings</th><th>Per share</th><th>Cash / share</th><th>Years away</th><th>Worth today</th></tr>`+
+ el.innerHTML=s+`<div class="note"><span class="dot" style="background:var(--teal)"></span> Cash you collect per share each year &nbsp; <span class="dot" style="background:var(--coral)"></span> Sale at ${num(S.scen.base.exit)}x final-year ${base.PS?'sales per share (P/S)':'profit per share (P/E)'}. All of it shrunk back to today, minus net debt per share (${f$(base.nd,2)}), = <b>${f$(base.value)}</b>.</div>`;
+ tb.innerHTML=`<tr><th>Year</th><th>Revenue</th><th>Owner margin</th><th>Owner earnings (after tax)</th><th>Profit / share</th><th>Cash / share</th><th>Years away</th><th>Worth today</th></tr>`+
   r.map((x,i)=>`<tr><td>${L[i]}</td><td>${fM(x.rev)}</td><td>${fP(x.m,1)}</td><td>${fM(x.oe)}</td><td>${f$(x.eps,2)}</td><td>${f$(x.cash,2)}</td><td>${x.t.toFixed(1)}</td><td>${f$(x.pvc,2)}</td></tr>`).join('')+
-  `<tr><td>Sale</td><td colspan="4" style="text-align:left">${num(S.scen.base.exit)}x × ${f$(r.at(-1).eps,2)}</td><td>${f$(sale)}</td><td>${r.at(-1).t.toFixed(1)}</td><td>${f$(r.at(-1).pvs)}</td></tr>`+
-  `<tr><td>Less net debt</td><td colspan="6"></td><td>-${f$(base.nd,2)}</td></tr><tr><td><b>Value / share</b></td><td colspan="6"></td><td><b>${f$(base.value)}</b></td></tr>`;}
+  `<tr><td>Sale</td><td colspan="4" style="text-align:left">${num(S.scen.base.exit)}x ${base.PS?'P/S × sales per share':'P/E × profit per share'} ${f$(base.PS?r.at(-1).sps:r.at(-1).eps,2)}</td><td>${f$(sale)}</td><td>${r.at(-1).t.toFixed(1)}</td><td>${f$(r.at(-1).pvs)}</td></tr>`+
+  `<tr><td>Less net debt</td><td colspan="6"></td><td>-${f$(base.nd,2)}</td></tr><tr><td><b>Value / share</b></td><td colspan="6"></td><td><b>${f$(base.value)}</b>${base.raw<0?' (floored at $0)':''}</td></tr>`;}
 
 /* =====================================================================
    AUTO-FILL FROM REPORTS
@@ -824,7 +854,7 @@ function autoAnswers(D,force){const F=companyFacts(D),{x,A}=F;const why=S._why=O
  if(po&&A.length){const r=po.val/1e6/A.at(-1).revenue;flag('commit',r>0.5,`purchase commitments ${fM(po.val/1e6)} = ${fP(r)} of a year's sales`);}else flag('commit',false,'no purchase-commitment figure tagged in SEC data – see commitments note');
  // adjusted net income from reported adjusted EPS
  (C.epsHistory||[]).forEach(e=>{const r=S.history.find(r=>r._meta&&Math.abs(new Date(r._meta.end)-new Date(e.quarter))<25*864e5);if(r&&num(r.adjNI)==null&&num(r.shares)){r.adjNI=Math.round(e.epsActual*r.shares*10)/10;}});
- if((C.epsHistory||[]).length)why.adj=`adjusted net income = reported adjusted EPS (Yahoo) × diluted shares`;
+ if((C.epsHistory||[]).length)why.adj=`adjusted net income = Yahoo "actual" EPS × diluted shares (usually the company's adjusted figure, sometimes the official one)`;
  // thesis-breakers
  if(force||!S.breakers){const H=S.history.filter(r=>num(r.revenue)),q=S.periodType==='Quarterly',L=H.at(-1),P=q?H.at(-5):H.at(-2);const yoy=L&&P?L.revenue/P.revenue-1:null;
   const avgM=om.length?om.reduce((a,b)=>a+b,0)/om.length:null;const sbc=L&&num(L.sbc)!=null?L.sbc/L.revenue:null;const lines=[];
@@ -875,34 +905,81 @@ function starterFor(D){const x=parseSEC(D,'SEC');const A=secRows({...x,mode:'Ann
  const fc=H.filter(r=>num(r.ocf)!=null&&num(r.capex)!=null&&num(r.gaapNI)>0).map(r=>(r.ocf-Math.abs(r.capex))/r.gaapNI).sort((a,b)=>a-b);
  const conv=fc.length?clamp(Math.round(fc[Math.floor(fc.length/2)]*100),80,100):95;
  const bearM1=clamp(mL-0.25*(mL-mA)-0.02,0.01,0.6);
- return{
+ // loss-making company: sales-based (P/S) sale, margins start negative and improve
+ const loss=mL0!=null&&mL0<=0;let lossScen=null,gm=null;
+ if(loss){const gp=annualFlow(x,['us-gaap:GrossProfit','ifrs-full:GrossProfit']).at(-1);const rA=gp?A.find(r=>r._meta.end===gp.end):null;gm=gp&&rA?gp.val/1e6/rA.revenue:null;
+  const ps=gm!=null?clamp(Math.round(gm*8*10)/10,1,12):3,m0=clamp(mL0,-1,0);
+  lossScen={bear:{m1:p1(m0),mN:p1(Math.min(0,m0/2)),exit:Math.round(ps*0.5*10)/10,story:'Starter: losses continue; buyer pays a low P/S.'},
+   base:{m1:p1(m0),mN:8,exit:ps,story:`Starter: reaches ~8% margin; P/S ${ps}x${gm!=null?` (gross margin ${Math.round(gm*100)}% × 8)`:''}.`},
+   bull:{m1:p1(m0/2),mN:18,exit:Math.round(ps*1.6*10)/10,story:'Starter: becomes solidly profitable; premium P/S.'}};}
+ const out={
   src:useC?`analyst forecasts (${C['0y'].numberOfAnalysts||'?'} analysts, Yahoo Finance, ${C.date})`:`the company's own growth history${C.currency&&!cOK?' (analyst forecasts skipped: different currency)':''}`,
   global:{disc:10,tax:CF.tax!=null?Math.round(CF.tax*100):15,netInt:R(nd),cashConv:conv,years:N,t0:Math.round(t0*10)/10,firstYearLabel:F?'FY'+String(F.getUTCFullYear()).slice(-2):'Year 1',valShares:num(c.shares)?Math.round(num(c.shares)*1.02*10)/10:null,mos:25},
   scen:{
    bear:{prob:25,rev1:R(lo),revN:R(path(lo,Math.min(0,g2/2),0)),m1:p1(bearM1),mN:p1(Math.min(mMin,mA-0.03)>0.01?Math.min(mMin,mA-0.03):0.01),exit:14,story:'Starter: sales stall, margins fall to the worst recent level.'},
    base:{prob:50,rev1:R(r1),revN:R(path(r1,g2,0.04)),m1:p1(mL),mN:p1(peak?mA+0.25*(mL-mA):(mL+mA)/2),exit:peak?14:18,story:'Starter: forecast growth fading to 4%; margins drift halfway back to average.'},
    bull:{prob:25,rev1:R(hi),revN:R(path(hi,g2+0.05,0.06)),m1:p1(clamp(mL+0.01,0.02,0.6)),mN:p1(clamp(Math.max(mL,mMax)+0.02,0.02,0.65)),exit:24,story:'Starter: top forecast, stronger growth, best margins hold.'}},
-  facts:{ltmM:mL0,avgM:avg,years:A.length,g2,useC,peak}};}
+  facts:{ltmM:mL0,avgM:avg,years:A.length,g2,useC,peak,loss,gm}};
+ if(lossScen){['bear','base','bull'].forEach(k=>Object.assign(out.scen[k],lossScen[k]));out.global.method='Auto';}
+ return out;}
 function applyStarter(t,ask){const D=(window.SEC_DATA||{})[t||String(S.company.ticker||'').toUpperCase()];
  if(!D){alert('Starter values need SEC data for this company. Add the ticker to data/watchlist.txt first.');return;}
  if(ask&&num(S.scen?.base?.revN)&&!confirm('Replace ALL automatic answers (steps 2, 4, 5, 6) with fresh automatic values? Your own edits will be overwritten.'))return;
  try{autoAnswers(D,true);}catch(e){console.warn(e);}const st=starterFor(D);Object.assign(S.global,st.global);S.scen=st.scen;S._starter={src:st.src,facts:st.facts,date:new Date().toISOString().slice(0,10)};
  save();renderAll();}
 function starterBox(){const el=document.getElementById('starter-box');if(!el)return;const s=S._starter;const has=!!(window.SEC_DATA||{})[String(S.company.ticker||'').toUpperCase()];
- el.innerHTML=s?`<b>Starter values were filled in automatically</b> from ${esc(s.src)} and the company's own margins (latest 12 months ${fP(s.facts.ltmM,1)}, ${s.facts.years}-year average ${fP(s.facts.avgM,1)}). They are a reasonable <b>starting point, not a forecast</b> – change any box you disagree with; results update instantly.${s.facts.peak?`<br><b style="color:var(--warn)">Cyclical peak warning:</b> today's margin is far above this company's long-run average – it may be at the top of a boom. Starter numbers assume margins fall back, but busts can be deeper; look hard at the Bear case.`:''} <button onclick="applyStarter(null,true)">Re-fill all automatic values</button>`
+ el.innerHTML=s?`<b>Starter values were filled in automatically</b> from ${esc(s.src)} and the company's own margins (latest 12 months ${fP(s.facts.ltmM,1)}, ${s.facts.years}-year average ${fP(s.facts.avgM,1)}). They are a reasonable <b>starting point, not a forecast</b> – change any box you disagree with; results update instantly.${s.facts.loss?`<br><b>Loss-making company:</b> it lost money over the last 12 months, so the sale is valued on <b>sales (P/S)</b> instead of profit. Starter P/S multiples come from its gross margin.`:''}${s.facts.peak?`<br><b style="color:var(--warn)">Cyclical peak warning:</b> today's margin is far above this company's long-run average – it may be at the top of a boom. Starter numbers assume margins fall back, but busts can be deeper; look hard at the Bear case.`:''} <button onclick="applyStarter(null,true)">Re-fill all automatic values</button>`
   :(has?`<b>Fill all of step 5 automatically?</b> Uses analyst forecasts and the company's own history. <button class="primary" onclick="applyStarter(null,true)">Fill starter values</button>`:'');}
 
 /* ---------- companies packed into data/sec-data.js by the GitHub Action ---------- */
 let CUR_T=null;
-function coBar(){const el=document.getElementById('cobar');const D=window.SEC_DATA||{};const ts=Object.keys(D).sort();
- if(!ts.length){el.innerHTML='';return;}
- const nm=t=>{const n=String(D[t].entityName||'').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()).replace(/\b(Inc|Ltd|Co|Corp|Plc)\b\.?/g,m=>m);return n;};
- el.innerHTML=`<label for="cosel">Auto-filled from SEC:</label>
-  <select id="cosel" class="cosel" onchange="if(this.value)openTicker(this.value)">
-   <option value="" ${CUR_T&&D[CUR_T]?'':'selected'} disabled>Choose a company…</option>
-   ${ts.map(t=>`<option value="${t}" ${t===CUR_T?'selected':''}>${t} – ${esc(nm(t))}</option>`).join('')}
+/* ---------- categories: your own groups of tickers ----------
+   Saved in this browser. "Download categories file" + upload to data/categories.json
+   on GitHub makes them the default on every device. */
+const CATKEY='svw-categories-v1';
+function getCats(){let c=null;try{c=JSON.parse(localStorage.getItem(CATKEY))}catch(e){}
+ if(!c||typeof c!=='object')c=JSON.parse(JSON.stringify(window.CATEGORIES||{}));return c;}
+function setCats(c){try{localStorage.setItem(CATKEY,JSON.stringify(c))}catch(e){}}
+let CUR_CAT=(()=>{try{return localStorage.getItem(CATKEY+':sel')||''}catch(e){return ''}})();
+let CAT_OPEN=false;
+function pickCat(v){if(v==='__new'){CAT_OPEN=true;coBar();setTimeout(()=>document.getElementById('catnew')?.focus(),0);return;}
+ if(v==='__manage'){CAT_OPEN=!CAT_OPEN;coBar();return;}
+ CUR_CAT=v;try{localStorage.setItem(CATKEY+':sel',v)}catch(e){}coBar();}
+function catAdd(){const el=document.getElementById('catnew');const n=(el.value||'').trim();if(!n)return;const c=getCats();if(!c[n])c[n]=[];
+ if(CUR_T&&!c[n].includes(CUR_T)&&document.getElementById('catwithcur')?.checked)c[n].push(CUR_T);setCats(c);CUR_CAT=n;try{localStorage.setItem(CATKEY+':sel',n)}catch(e){}coBar();}
+function catRename(o,n){n=(n||'').trim();const c=getCats();if(!n||n===o||c[n])return coBar();c[n]=c[o];delete c[o];setCats(c);if(CUR_CAT===o)CUR_CAT=n;coBar();}
+function catDel(n){const c=getCats();delete c[n];setCats(c);if(CUR_CAT===n)CUR_CAT='';coBar();}
+function catToggle(n,t,on){const c=getCats();c[n]=c[n]||[];if(on&&!c[n].includes(t))c[n].push(t);if(!on)c[n]=c[n].filter(x=>x!==t);setCats(c);coBar();}
+function catExport(){const b=new Blob([JSON.stringify(getCats(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='categories.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function coBar(){const el=document.getElementById('cobar');const D=window.SEC_DATA||{};const all=Object.keys(D).sort();
+ if(!all.length){el.innerHTML='';return;}
+ const cats=getCats(),names=Object.keys(cats).sort((a,b)=>a.localeCompare(b));if(CUR_CAT&&CUR_CAT!=='__none'&&!cats[CUR_CAT])CUR_CAT='';
+ const inAny=new Set(names.flatMap(n=>cats[n]));const none=all.filter(t=>!inAny.has(t));
+ const list=CUR_CAT==='__none'?none:CUR_CAT?(cats[CUR_CAT]||[]).filter(t=>D[t]).sort():all;
+ const nm=t=>String(D[t].entityName||'').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+ let h=`<label for="catsel">Category:</label>
+  <select id="catsel" class="cosel cat" onchange="pickCat(this.value)">
+   <option value="" ${!CUR_CAT?'selected':''}>All companies (${all.length})</option>
+   ${names.map(n=>`<option value="${esc(n)}" ${n===CUR_CAT?'selected':''}>${esc(n)} (${(cats[n]||[]).filter(t=>D[t]).length})</option>`).join('')}
+   ${names.length&&none.length?`<option value="__none" ${CUR_CAT==='__none'?'selected':''}>Not in a category (${none.length})</option>`:''}
+   <option value="__new">+ New category…</option>${names.length?'<option value="__manage">✎ Manage categories…</option>':''}
   </select>
-  <span class="note">data updated ${esc((window.SEC_BUILT||'').slice(0,10))}</span>`;}
+  <label for="cosel">Company:</label>
+  <select id="cosel" class="cosel" onchange="if(this.value)openTicker(this.value)">
+   <option value="" ${list.includes(CUR_T)?'':'selected'} disabled>${list.length?'Choose a company…':'No companies in this category yet'}</option>
+   ${list.map(t=>`<option value="${t}" ${t===CUR_T?'selected':''}>${t} – ${esc(nm(t))}</option>`).join('')}
+  </select>
+  <span class="note">data updated ${esc((window.SEC_BUILT||'').slice(0,10))}</span>`;
+ if(CAT_OPEN){h+=`<div class="catpanel">
+   <div class="catrow"><b>New category</b> <input id="catnew" placeholder="e.g. AI chips" onkeydown="if(event.key==='Enter')catAdd()">
+    ${CUR_T?`<label class="note"><input type="checkbox" id="catwithcur" checked> add ${CUR_T}</label>`:''}<button class="primary" onclick="catAdd()">Add</button>
+    <span style="flex:1"></span><button onclick="CAT_OPEN=false;coBar()">Done</button></div>
+   ${names.map(n=>`<div class="catbox"><div class="catrow"><input value="${esc(n)}" onchange="catRename(${esc(JSON.stringify(n))},this.value)" aria-label="Category name">
+     <button onclick="if(confirm('Delete category “${esc(n)}”? The companies stay in your list.'))catDel(${esc(JSON.stringify(n))})">Delete</button></div>
+     <div class="chips">${all.map(t=>`<label class="chip ${(cats[n]||[]).includes(t)?'on':''}"><input type="checkbox" ${(cats[n]||[]).includes(t)?'checked':''} onchange="catToggle(${esc(JSON.stringify(n))},'${t}',this.checked)">${t}</label>`).join('')}</div></div>`).join('')}
+   <div class="note" style="margin-top:6px">Saved in this browser. To use the same categories on every device: <button onclick="catExport()">Download categories file</button> then upload it to the <b>data</b> folder on GitHub (keep the name <code>categories.json</code>).</div>
+  </div>`;}
+ el.innerHTML=h;}
 function openTicker(t,keepLocal){const D=(window.SEC_DATA||{})[t];if(!D)return;
  let base=null;try{base=JSON.parse(localStorage.getItem(KEY+':'+t))}catch(e){}
  if(!base&&window.WORKBOOKS&&WORKBOOKS[t])base=WORKBOOKS[t];

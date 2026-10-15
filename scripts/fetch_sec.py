@@ -231,13 +231,21 @@ def build_bundle(root):
                 wbs[fn[:-5].upper()] = json.load(open(os.path.join(wdir, fn)))
             except Exception as e:
                 print(f"bundle: skipped workbook {fn} ({e})")
+    cats = {}
+    cpath = os.path.join(root, "data", "categories.json")
+    if os.path.exists(cpath):
+        try:
+            cats = json.load(open(cpath))
+        except Exception as e:
+            print(f"bundle: categories.json skipped ({e})")
     out = os.path.join(root, "data", "sec-data.js")
     with open(out, "w") as f:
         f.write("/* Built automatically by scripts/fetch_sec.py - do not edit by hand. */\n")
         f.write("window.SEC_DATA=" + json.dumps(sec, separators=(",", ":")) + ";\n")
         f.write("window.WORKBOOKS=" + json.dumps(wbs, separators=(",", ":")) + ";\n")
+        f.write("window.CATEGORIES=" + json.dumps(cats, separators=(",", ":")) + ";\n")
         f.write("window.SEC_BUILT=" + json.dumps(datetime.now(timezone.utc).isoformat(timespec="seconds")) + ";\n")
-    print(f"bundle: data/sec-data.js with {len(sec)} companies, {len(wbs)} saved workbooks")
+    print(f"bundle: data/sec-data.js with {len(sec)} companies, {len(wbs)} saved workbooks, {len(cats)} categories")
 
 
 def slim_facts(facts):

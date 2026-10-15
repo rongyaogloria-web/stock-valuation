@@ -18,6 +18,7 @@ on:
     paths:
       - "data/watchlist.txt"
       - "data/workbooks/**"
+      - "data/categories.json"
       - "scripts/fetch_sec.py"
       - ".github/workflows/fetch-sec.yml"
   schedule:
