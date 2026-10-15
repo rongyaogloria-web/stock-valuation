@@ -45,9 +45,25 @@ def quarters(start):
             y, q = y + 1, 1
 
 
+LOG = []
+
+
+def log(msg):
+    print(msg)
+    LOG.append(msg)
+
+
 def main():
+    try:
+        run()
+    finally:
+        with open(os.path.join(ROOT, "data", "reports", "_ir_log.txt"), "w") as f:
+            f.write(f"Run {date.today().isoformat()}\n" + "\n".join(LOG) + "\n")
+
+
+def run():
     if not os.path.exists(CFG):
-        print("ir: no data/report_sources.json - nothing to download")
+        log("ir: no data/report_sources.json - nothing to download")
         return
     cfg = json.load(open(CFG))
     for tk, c in cfg.items():
@@ -66,26 +82,28 @@ def main():
             try:
                 html, final = get(page)
             except Exception as e:
-                print(f"ir: {tk} {y}Q{q}: page not available ({e})")
+                log(f"ir: {tk} {y}Q{q}: page not available ({e})")
                 continue
             html = html.decode("utf-8", "replace")
             links = re.findall(r'href=["\']([^"\']+\.pdf)["\']', html, re.I)
+            log(f"ir: {tk} {y}Q{q}: page {len(html)} chars, {len(links)} PDF links: "
+                + ", ".join(urllib.parse.unquote(l).rsplit("/", 1)[-1] for l in links[:8]))
             hit = [l for l in links if urllib.parse.unquote(l).lower().rsplit("/", 1)[-1] == want]
             if not hit:
-                print(f"ir: {tk} {y}Q{q}: {want} not on the page yet (not published?)")
+                log(f"ir: {tk} {y}Q{q}: {want} not on the page yet (not published?)")
                 continue
             url = urllib.parse.urljoin(final, hit[0])
             try:
                 pdf, _ = get(url, timeout=120)
             except Exception as e:
-                print(f"ir: {tk} {y}Q{q}: download failed ({e})")
+                log(f"ir: {tk} {y}Q{q}: download failed ({e})")
                 continue
             if not pdf.startswith(b"%PDF"):
-                print(f"ir: {tk} {y}Q{q}: link did not return a PDF - skipped")
+                log(f"ir: {tk} {y}Q{q}: link did not return a PDF - skipped")
                 continue
             open(os.path.join(folder, name), "wb").write(pdf)
             sources[name] = {"url": url, "page": page, "downloaded": date.today().isoformat()}
-            print(f"ir: {tk} {y}Q{q}: saved data/reports/{tk.upper()}/{name} ({len(pdf) // 1024} KB)")
+            log(f"ir: {tk} {y}Q{q}: saved data/reports/{tk.upper()}/{name} ({len(pdf) // 1024} KB)")
             time.sleep(1)
         with open(src_path, "w") as f:
             json.dump(sources, f, indent=1)
